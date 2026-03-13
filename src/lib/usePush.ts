@@ -25,14 +25,12 @@ export function usePushNotification(staffId: string) {
       if (perm !== 'granted') return false;
 
       const reg = await navigator.serviceWorker.ready;
+      const key = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || '';
       const sub = await reg.pushManager.subscribe({
         userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array(
-          process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || ''
-        ),
+        applicationServerKey: urlBase64ToArrayBuffer(key),
       });
 
-      // GASに購読情報を保存
       if (staffId) {
         await api.savePushSub(staffId, sub.toJSON());
       }
@@ -60,11 +58,13 @@ export function usePushNotification(staffId: string) {
   return { permission, subscribed, subscribe, sendPush };
 }
 
-function urlBase64ToUint8Array(base64String: string): Uint8Array {
+// Uint8Array ではなく ArrayBuffer を返すことで型エラーを回避
+function urlBase64ToArrayBuffer(base64String: string): ArrayBuffer {
   const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
   const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
   const rawData = window.atob(base64);
-  const outputArray = new Uint8Array(rawData.length);
-  for (let i = 0; i < rawData.length; ++i) outputArray[i] = rawData.charCodeAt(i);
-  return outputArray;
+  const buffer = new ArrayBuffer(rawData.length);
+  const view = new Uint8Array(buffer);
+  for (let i = 0; i < rawData.length; ++i) view[i] = rawData.charCodeAt(i);
+  return buffer;
 }
