@@ -1,14 +1,18 @@
 'use client';
 import { useState, useEffect } from 'react';
-import LoginPage from '@/components/LoginPage';
+import LoginPage, { LoginUser } from '@/components/LoginPage';
 import Dashboard from '@/components/Dashboard';
 
 export default function Home() {
-  const [authed, setAuthed] = useState(false);
-  const [ready, setReady]   = useState(false);
+  const [user, setUser] = useState<LoginUser | null>(null);
+  const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    setAuthed(sessionStorage.getItem('auth') === '1');
+    const auth = sessionStorage.getItem('auth');
+    const stored = sessionStorage.getItem('user');
+    if (auth === '1' && stored) {
+      try { setUser(JSON.parse(stored)); } catch { }
+    }
     setReady(true);
   }, []);
 
@@ -21,7 +25,14 @@ export default function Home() {
     </div>
   );
 
-  return authed
-    ? <Dashboard onLogout={() => { sessionStorage.removeItem('auth'); setAuthed(false); }} />
-    : <LoginPage onLogin={() => setAuthed(true)} />;
+  return user
+    ? <Dashboard
+      currentUser={user}
+      onLogout={() => {
+        sessionStorage.removeItem('auth');
+        sessionStorage.removeItem('user');
+        setUser(null);
+      }}
+    />
+    : <LoginPage onLogin={u => setUser(u)} />;
 }
