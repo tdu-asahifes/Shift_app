@@ -203,6 +203,21 @@ export default function CheckInTab({ user, locationId, onScanRequest }: Props) {
             {state === 'done' ? `出勤 ${checkedInTime}` : ''}　{locationName}
           </p>
         </div>
+        {nextShift && (
+          <div className="card" style={{ marginBottom: '1rem', borderLeft: '4px solid #2563eb' }}>
+            <p style={{ fontSize: '0.75rem', color: '#2563eb', fontWeight: '600' }}>次のシフト</p>
+            <p style={{ fontWeight: '600' }}>{nextShift.locationName}</p>
+            <p style={{ fontSize: '0.875rem', color: '#64748b' }}>{nextShift.time}</p>
+          </div>
+        )}
+        <button
+          className="btn btn-primary"
+          style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', marginBottom: '1.5rem' }}
+          onClick={onScanRequest}
+        >
+          <QrCode size={20} />
+          次の場所のQRをスキャン
+        </button>
         <MemberStatus locationId={locationId} date={today} />
       </div>
     );
