@@ -56,6 +56,7 @@ function supabaseRequest(path, method, body) {
 function onOpen() {
   SpreadsheetApp.getUi()
     .createMenu('シフト管理')
+    .addItem('場所一覧を自動抽出', 'extractLocations')
     .addItem('Supabaseに同期', 'syncAll')
     .addItem('トリガー設定', 'setupTriggers')
     .addToUi();
@@ -217,7 +218,10 @@ function convertMatrixSheet(sheet, date, locationMap) {
       var cellValue = String(data[r][ts.col] || '').trim();
       var timeStr = padTime(ts.hour) + ':' + padTime(ts.minute);
 
-      if (cellValue && cellValue === currentLoc) {
+      // 除外値はスキップ（空セルと同じ扱い）
+      var isValid = cellValue && !isExcluded(cellValue);
+
+      if (isValid && cellValue === currentLoc) {
         // 同じ場所が続く → 終了時刻を延長
         endTime = addMinutes(ts.hour, ts.minute, 30);
       } else {
@@ -235,7 +239,7 @@ function convertMatrixSheet(sheet, date, locationMap) {
           });
         }
         // 新しいシフト開始
-        if (cellValue) {
+        if (isValid) {
           currentLoc = cellValue;
           startTime = timeStr;
           endTime = addMinutes(ts.hour, ts.minute, 30);
@@ -341,4 +345,78 @@ function toLocationId(name) {
     .replace(/[\s　]/g, '_')
     .replace(/[！!]/g, '')
     .toLowerCase();
+}
+
+// ---------- 場所一覧の自動抽出 ----------
+
+// シフトとして扱わないセル値（除外リスト）
+var EXCLUDE_VALUES = [
+  '欠席', '昼食', '帰宅！', '帰宅', '全体会議',
+];
+
+// 除外パターン（部分一致）
+var EXCLUDE_PATTERNS = [
+  'いいよ', '確認', '候補', '担責', '枚数', '好きなように',
+  '抜ける可能性', '用事で',
+];
+
+function isExcluded(value) {
+  if (!value) return true;
+  var v = value.trim();
+  if (!v) return true;
+  for (var i = 0; i < EXCLUDE_VALUES.length; i++) {
+    if (v === EXCLUDE_VALUES[i]) return true;
+  }
+  for (var i = 0; i < EXCLUDE_PATTERNS.length; i++) {
+    if (v.indexOf(EXCLUDE_PATTERNS[i]) !== -1) return true;
+  }
+  return false;
+}
+
+function extractLocations() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var settingSheet = ss.getSheetByName('設定');
+  if (!settingSheet) {
+    SpreadsheetApp.getUi().alert('「設定」シートを先に作成してください');
+    return;
+  }
+
+  var settingData = settingSheet.getDataRange().getValues();
+  var sheetNames = [];
+  for (var i = 1; i < settingData.length; i++) {
+    if (settingData[i][0]) sheetNames.push(String(settingData[i][0]).trim());
+  }
+
+  // 全シートからユニークな場所名を収集
+  var locationSet = {};
+  for (var s = 0; s < sheetNames.length; s++) {
+    var sheet = ss.getSheetByName(sheetNames[s]);
+    if (!sheet) continue;
+    var data = sheet.getDataRange().getValues();
+    for (var r = 1; r < data.length; r++) {
+      for (var c = TIME_COL_START; c < data[r].length; c++) {
+        var val = String(data[r][c] || '').trim();
+        if (val && !isExcluded(val)) {
+          locationSet[val] = true;
+        }
+      }
+    }
+  }
+
+  // 場所一覧シートに書き出し
+  var locSheet = ss.getSheetByName('場所一覧');
+  if (!locSheet) locSheet = ss.insertSheet('場所一覧');
+  locSheet.clear();
+  locSheet.appendRow(['場所ID', '場所名']);
+
+  var names = Object.keys(locationSet).sort();
+  for (var i = 0; i < names.length; i++) {
+    locSheet.appendRow([toLocationId(names[i]), names[i]]);
+  }
+
+  SpreadsheetApp.getUi().alert(
+    '場所一覧を抽出しました: ' + names.length + '件\n\n' +
+    '「場所一覧」シートを確認し、不要な項目があれば行を削除してください。\n' +
+    '場所IDは自動生成されていますが、QRコードのURLに使うので必要に応じて編集してください。'
+  );
 }
