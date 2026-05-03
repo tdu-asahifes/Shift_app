@@ -15,9 +15,10 @@ export default function LoginPage({ onLogin }: Props) {
   const [error, setError] = useState('');
 
   async function handleLogin() {
-    const id = studentId.trim();
+    const id = studentId.trim().toUpperCase();
     const c = code.trim();
     if (!id) { setError('学籍番号を入力してください'); return; }
+    if (!/^\d{2}[A-Z]{2}\d{3}$/.test(id)) { setError('学籍番号の形式が正しくありません（例: 99EC999）'); return; }
     if (!c) { setError('ログインコードを入力してください'); return; }
 
     setLoading(true);
@@ -62,9 +63,9 @@ export default function LoginPage({ onLogin }: Props) {
             <input
               type="text"
               className="input"
-              placeholder="例: 99EC999"
+              placeholder="例: 99XX999"
               value={studentId}
-              onChange={e => setStudentId(e.target.value)}
+              onChange={e => setStudentId(e.target.value.toUpperCase())}
               onKeyDown={e => e.key === 'Enter' && handleLogin()}
               autoFocus
             />
