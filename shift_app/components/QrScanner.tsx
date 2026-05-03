@@ -1,6 +1,6 @@
 'use client';
-import { useEffect, useRef, useState } from 'react';
-import { Html5Qrcode } from 'html5-qrcode';
+import { useEffect, useRef, useState, useCallback } from 'react';
+import { Html5Qrcode, Html5QrcodeScannerState } from 'html5-qrcode';
 import { X } from 'lucide-react';
 
 interface Props {
@@ -12,6 +12,19 @@ export default function QrScanner({ onScan, onClose }: Props) {
   const scannerRef = useRef<Html5Qrcode | null>(null);
   const [error, setError] = useState('');
 
+  const safeStop = useCallback(async () => {
+    const scanner = scannerRef.current;
+    if (!scanner) return;
+    try {
+      const state = scanner.getState();
+      if (state === Html5QrcodeScannerState.SCANNING || state === Html5QrcodeScannerState.PAUSED) {
+        await scanner.stop();
+      }
+    } catch {
+      // 既に停止済み
+    }
+  }, []);
+
   useEffect(() => {
     const scanner = new Html5Qrcode('qr-reader');
     scannerRef.current = scanner;
@@ -20,34 +33,27 @@ export default function QrScanner({ onScan, onClose }: Props) {
       { facingMode: 'environment' },
       { fps: 10, qrbox: { width: 250, height: 250 } },
       (text) => {
-        // URLからlocationパラメータを抽出
         try {
           const url = new URL(text);
           const location = url.searchParams.get('location');
           if (location) {
-            scanner.stop().catch(() => {});
-            onScan(location);
+            safeStop().then(() => onScan(location));
             return;
           }
         } catch {
-          // URLでない場合、テキスト自体をlocationIdとして扱う
+          // URLでない場合
         }
-        // location_idが直接書かれたQRの場合
         if (text && !text.includes('://')) {
-          scanner.stop().catch(() => {});
-          onScan(text.trim());
+          safeStop().then(() => onScan(text.trim()));
         }
       },
-      () => {}, // ignore scan failures
-    ).catch((err) => {
+      () => {},
+    ).catch(() => {
       setError('カメラを起動できませんでした。カメラへのアクセスを許可してください。');
-      console.error(err);
     });
 
-    return () => {
-      scanner.stop().catch(() => {});
-    };
-  }, [onScan]);
+    return () => { safeStop(); };
+  }, [onScan, safeStop]);
 
   return (
     <div style={{
@@ -55,12 +61,8 @@ export default function QrScanner({ onScan, onClose }: Props) {
       background: 'rgba(0,0,0,0.9)',
       display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
     }}>
-      {/* 閉じるボタン */}
       <button
-        onClick={() => {
-          scannerRef.current?.stop().catch(() => {});
-          onClose();
-        }}
+        onClick={() => { safeStop().then(onClose); }}
         style={{
           position: 'absolute', top: '1rem', right: '1rem',
           background: 'rgba(255,255,255,0.2)', border: 'none', borderRadius: '50%',
