@@ -3,16 +3,18 @@ import { useEffect, useState, useCallback } from 'react';
 import { api } from '@/lib/gas';
 import { getToday } from '@/lib/session';
 import { LoginUser, Shift } from '@/lib/types';
+import { QrCode, CheckCircle, AlertTriangle, MapPin, Clock, ArrowRight } from 'lucide-react';
 import MemberStatus from './MemberStatus';
 
 interface Props {
   user: LoginUser;
   locationId: string | null;
+  onScanRequest: () => void;
 }
 
 type CheckInState = 'idle' | 'loading' | 'done' | 'wrong_location' | 'already' | 'error';
 
-export default function CheckInTab({ user, locationId }: Props) {
+export default function CheckInTab({ user, locationId, onScanRequest }: Props) {
   const [shifts, setShifts] = useState<Shift[]>([]);
   const [state, setState] = useState<CheckInState>('idle');
   const [errorMsg, setErrorMsg] = useState('');
@@ -111,13 +113,21 @@ export default function CheckInTab({ user, locationId }: Props) {
   if (!locationId) {
     return (
       <div style={{ padding: '2rem 1rem', textAlign: 'center' }}>
-        <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>📷</div>
+        <div style={{ marginBottom: '1rem', color: '#94a3b8' }}><QrCode size={48} strokeWidth={1.5} /></div>
         <h2 style={{ fontSize: '1.125rem', fontWeight: '600', marginBottom: '0.5rem' }}>
           QRコードを読み取ってください
         </h2>
-        <p style={{ color: '#94a3b8', fontSize: '0.875rem' }}>
-          各担当場所に設置されたQRコードをカメラで読み取ると、打刻ができます
+        <p style={{ color: '#94a3b8', fontSize: '0.875rem', marginBottom: '1.5rem' }}>
+          各担当場所に設置されたQRコードを読み取ると、打刻ができます
         </p>
+        <button
+          className="btn btn-primary"
+          style={{ maxWidth: '16rem', margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}
+          onClick={onScanRequest}
+        >
+          <QrCode size={20} />
+          QRコードをスキャン
+        </button>
 
         {/* 現在・次のシフト情報 */}
         {(currentShift || nextShift) && (
@@ -185,7 +195,7 @@ export default function CheckInTab({ user, locationId }: Props) {
           padding: '1.5rem', background: '#f0fdf4', borderRadius: '1rem',
           border: '1px solid #bbf7d0', textAlign: 'center', marginBottom: '1.5rem',
         }}>
-          <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>✓</div>
+          <div style={{ marginBottom: '0.5rem', color: '#166534' }}><CheckCircle size={36} strokeWidth={2} /></div>
           <p style={{ fontWeight: '600', fontSize: '1.125rem', color: '#166534' }}>
             {state === 'done' ? '打刻完了' : '打刻済みです'}
           </p>
