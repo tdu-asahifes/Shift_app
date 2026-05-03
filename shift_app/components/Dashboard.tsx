@@ -1,12 +1,14 @@
 'use client';
 import { useState, type ReactNode } from 'react';
+import dynamic from 'next/dynamic';
 import { LoginUser } from '@/lib/types';
 import { clearSession, saveLocation } from '@/lib/session';
 import { ScanLine, CalendarDays, History, LogOut } from 'lucide-react';
 import CheckInTab from './CheckInTab';
 import ShiftTab from './ShiftTab';
 import HistoryTab from './HistoryTab';
-import QrScanner from './QrScanner';
+
+const QrScanner = dynamic(() => import('./QrScanner'), { ssr: false });
 
 type Tab = 'checkin' | 'shift' | 'history';
 
