@@ -3,9 +3,10 @@
 // ==========================================
 //
 // スプレッドシート構成:
-//   シート1「シフト」: 日付 | 時間 | 名前 | 学籍番号 | 場所ID | 連絡
-//   シート2「場所一覧」: 場所ID | 場所名
-//   シート3「当日コード」: 日付 | ログインコード
+//   日付シート（例:「11/1」）: 団体 | 昼食 | 所属 | 学籍番号 | 氏名 | 役職 | 学年 | 学科 | 下3桁 | 8:00 | 8:30 | ... | 19:30
+//   「場所一覧」シート: 場所ID | 場所名
+//   「当日コード」シート: 日付 | ログインコード
+//   「設定」シート: シート名と日付の対応
 //
 // 使い方:
 //   1. スクリプトプロパティに SUPABASE_URL と SUPABASE_ANON_KEY を設定
@@ -14,8 +15,13 @@
 
 // ---------- 設定 ----------
 
+// 日付シートの列インデックス（0始まり）
+var COL_STUDENT_ID = 3; // 学籍番号
+var COL_NAME = 4;       // 氏名
+var TIME_COL_START = 9; // 時間列の開始位置（8:00〜）
+
 function getConfig() {
-  const props = PropertiesService.getScriptProperties();
+  var props = PropertiesService.getScriptProperties();
   return {
     supabaseUrl: props.getProperty('SUPABASE_URL'),
     supabaseKey: props.getProperty('SUPABASE_ANON_KEY'),
@@ -23,8 +29,8 @@ function getConfig() {
 }
 
 function supabaseRequest(path, method, body) {
-  const config = getConfig();
-  const options = {
+  var config = getConfig();
+  var options = {
     method: method || 'GET',
     headers: {
       'apikey': config.supabaseKey,
@@ -35,13 +41,13 @@ function supabaseRequest(path, method, body) {
     muteHttpExceptions: true,
   };
   if (body) options.payload = JSON.stringify(body);
-  const url = config.supabaseUrl + '/rest/v1/' + path;
-  const res = UrlFetchApp.fetch(url, options);
-  const code = res.getResponseCode();
+  var url = config.supabaseUrl + '/rest/v1/' + path;
+  var res = UrlFetchApp.fetch(url, options);
+  var code = res.getResponseCode();
   if (code >= 400) {
     throw new Error('Supabase error ' + code + ': ' + res.getContentText());
   }
-  const text = res.getContentText();
+  var text = res.getContentText();
   return text ? JSON.parse(text) : null;
 }
 
@@ -60,31 +66,29 @@ function onOpen() {
 function syncAll() {
   syncLocations();
   syncDailyCodes();
-  syncShifts();
+  syncShiftsFromMatrix();
   SpreadsheetApp.getUi().alert('同期完了しました');
 }
 
-// 朝の自動同期（UIなし）
 function syncAllSilent() {
   syncLocations();
   syncDailyCodes();
-  syncShifts();
+  syncShiftsFromMatrix();
   Logger.log('自動同期完了: ' + new Date());
 }
 
 // ---------- 場所一覧の同期 ----------
 
 function syncLocations() {
-  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('場所一覧');
+  var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('場所一覧');
   if (!sheet) throw new Error('「場所一覧」シートが見つかりません');
 
-  const data = sheet.getDataRange().getValues();
-  if (data.length <= 1) return; // ヘッダーのみ
+  var data = sheet.getDataRange().getValues();
+  if (data.length <= 1) return;
 
-  // 既存データを削除して再挿入
   supabaseRequest('locations?location_id=neq.___placeholder___', 'DELETE');
 
-  const rows = [];
+  var rows = [];
   for (var i = 1; i < data.length; i++) {
     if (!data[i][0]) continue;
     rows.push({
@@ -101,13 +105,12 @@ function syncLocations() {
 // ---------- 当日コードの同期 ----------
 
 function syncDailyCodes() {
-  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('当日コード');
+  var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('当日コード');
   if (!sheet) throw new Error('「当日コード」シートが見つかりません');
 
-  const data = sheet.getDataRange().getValues();
+  var data = sheet.getDataRange().getValues();
   if (data.length <= 1) return;
 
-  // 既存データを削除して再挿入
   supabaseRequest('daily_codes?date=neq.1900-01-01', 'DELETE');
 
   var rows = [];
@@ -124,41 +127,139 @@ function syncDailyCodes() {
   Logger.log('当日コード: ' + rows.length + '件同期');
 }
 
-// ---------- シフトの同期 ----------
+// ---------- マトリックス形式シフトの同期 ----------
 
-function syncShifts() {
-  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('シフト');
-  if (!sheet) throw new Error('「シフト」シートが見つかりません');
+function syncShiftsFromMatrix() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var settingSheet = ss.getSheetByName('設定');
+  if (!settingSheet) throw new Error('「設定」シートが見つかりません');
 
-  const data = sheet.getDataRange().getValues();
-  if (data.length <= 1) return;
+  // 設定シートからシート名→日付の対応を読み取る
+  var settingData = settingSheet.getDataRange().getValues();
+  var sheetDateMap = {}; // { シート名: 日付 }
+  for (var i = 1; i < settingData.length; i++) {
+    if (!settingData[i][0] || !settingData[i][1]) continue;
+    sheetDateMap[String(settingData[i][0]).trim()] = formatDate(settingData[i][1]);
+  }
 
-  // 既存シフトを削除して再挿入
+  // 場所名→場所IDのマッピングを取得
+  var locSheet = ss.getSheetByName('場所一覧');
+  var locationMap = {}; // { 場所名: 場所ID }
+  if (locSheet) {
+    var locData = locSheet.getDataRange().getValues();
+    for (var i = 1; i < locData.length; i++) {
+      if (!locData[i][0]) continue;
+      locationMap[String(locData[i][1]).trim()] = String(locData[i][0]).trim();
+    }
+  }
+
+  // 既存シフトを削除
   supabaseRequest('shifts?id=gt.0', 'DELETE');
 
-  var rows = [];
-  for (var i = 1; i < data.length; i++) {
-    if (!data[i][0]) continue;
-    var time = String(data[i][1]).trim(); // "10:00-13:00"
-    var parts = time.split('-');
-    if (parts.length !== 2) {
-      Logger.log('行' + (i + 1) + ': 時間形式が不正: ' + time);
+  var totalShifts = 0;
+
+  // 各日付シートを処理
+  var sheetNames = Object.keys(sheetDateMap);
+  for (var s = 0; s < sheetNames.length; s++) {
+    var sheetName = sheetNames[s];
+    var date = sheetDateMap[sheetName];
+    var sheet = ss.getSheetByName(sheetName);
+    if (!sheet) {
+      Logger.log('シート「' + sheetName + '」が見つかりません。スキップします。');
       continue;
     }
-    rows.push({
-      date: formatDate(data[i][0]),
-      start_time: normalizeTime(parts[0]),
-      end_time: normalizeTime(parts[1]),
-      name: String(data[i][2]).trim(),
-      student_id: String(data[i][3]).trim(),
-      location_id: String(data[i][4]).trim(),
-      notice: data[i][5] ? String(data[i][5]).trim() : '',
-    });
+
+    var rows = convertMatrixSheet(sheet, date, locationMap);
+    if (rows.length > 0) {
+      // 100件ずつ分割して送信（GASのペイロード制限対策）
+      for (var b = 0; b < rows.length; b += 100) {
+        var batch = rows.slice(b, b + 100);
+        supabaseRequest('shifts', 'POST', batch);
+      }
+    }
+    totalShifts += rows.length;
+    Logger.log(sheetName + '(' + date + '): ' + rows.length + '件');
   }
-  if (rows.length > 0) {
-    supabaseRequest('shifts', 'POST', rows);
+
+  Logger.log('シフト合計: ' + totalShifts + '件同期');
+}
+
+// マトリックスシート1枚を変換
+function convertMatrixSheet(sheet, date, locationMap) {
+  var data = sheet.getDataRange().getValues();
+  if (data.length <= 1) return [];
+
+  // ヘッダーから時間列を解析
+  var header = data[0];
+  var timeSlots = []; // [{col, hour, minute}, ...]
+  for (var c = TIME_COL_START; c < header.length; c++) {
+    var h = parseTimeHeader(header[c]);
+    if (h) {
+      timeSlots.push({ col: c, hour: h.hour, minute: h.minute });
+    }
   }
-  Logger.log('シフト: ' + rows.length + '件同期');
+
+  var shifts = [];
+
+  // 各行（人）を処理
+  for (var r = 1; r < data.length; r++) {
+    var studentId = String(data[r][COL_STUDENT_ID] || '').trim();
+    var name = String(data[r][COL_NAME] || '').trim();
+    if (!studentId || !name) continue;
+
+    // 連続する同じ場所をグループ化
+    var currentLoc = null;
+    var startTime = null;
+    var endTime = null;
+
+    for (var t = 0; t < timeSlots.length; t++) {
+      var ts = timeSlots[t];
+      var cellValue = String(data[r][ts.col] || '').trim();
+      var timeStr = padTime(ts.hour) + ':' + padTime(ts.minute);
+
+      if (cellValue && cellValue === currentLoc) {
+        // 同じ場所が続く → 終了時刻を延長
+        endTime = addMinutes(ts.hour, ts.minute, 30);
+      } else {
+        // 前のシフトを保存
+        if (currentLoc) {
+          var locId = locationMap[currentLoc] || toLocationId(currentLoc);
+          shifts.push({
+            date: date,
+            start_time: startTime + ':00',
+            end_time: endTime + ':00',
+            name: name,
+            student_id: studentId,
+            location_id: locId,
+            notice: '',
+          });
+        }
+        // 新しいシフト開始
+        if (cellValue) {
+          currentLoc = cellValue;
+          startTime = timeStr;
+          endTime = addMinutes(ts.hour, ts.minute, 30);
+        } else {
+          currentLoc = null;
+        }
+      }
+    }
+    // 最後のシフトを保存
+    if (currentLoc) {
+      var locId = locationMap[currentLoc] || toLocationId(currentLoc);
+      shifts.push({
+        date: date,
+        start_time: startTime + ':00',
+        end_time: endTime + ':00',
+        name: name,
+        student_id: studentId,
+        location_id: locId,
+        notice: '',
+      });
+    }
+  }
+
+  return shifts;
 }
 
 // ---------- 18:30 一括退勤 ----------
@@ -167,7 +268,6 @@ function batchCheckOut() {
   var today = Utilities.formatDate(new Date(), 'Asia/Tokyo', 'yyyy-MM-dd');
   var now = new Date().toISOString();
 
-  // 本日の退勤未記録レコードを全て退勤処理
   supabaseRequest(
     'attendance?date=eq.' + today + '&check_out_at=is.null',
     'PATCH',
@@ -179,20 +279,17 @@ function batchCheckOut() {
 // ---------- トリガー設定 ----------
 
 function setupTriggers() {
-  // 既存トリガーを削除
   var triggers = ScriptApp.getProjectTriggers();
   for (var i = 0; i < triggers.length; i++) {
     ScriptApp.deleteTrigger(triggers[i]);
   }
 
-  // 毎朝7:00に自動同期
   ScriptApp.newTrigger('syncAllSilent')
     .timeBased()
     .everyDays(1)
     .atHour(7)
     .create();
 
-  // 毎日18:30に一括退勤
   ScriptApp.newTrigger('batchCheckOut')
     .timeBased()
     .everyDays(1)
@@ -213,13 +310,35 @@ function formatDate(value) {
   if (value instanceof Date) {
     return Utilities.formatDate(value, 'Asia/Tokyo', 'yyyy-MM-dd');
   }
-  // 文字列の場合（2025/11/01 → 2025-11-01）
   return String(value).replace(/\//g, '-').trim();
 }
 
-function normalizeTime(t) {
-  t = t.trim();
-  // "9:00" → "09:00"
-  if (/^\d:\d{2}$/.test(t)) t = '0' + t;
-  return t + ':00'; // PostgreSQL time型用に秒を追加
+function parseTimeHeader(value) {
+  // "8:00", "8:30", "10:00:" など → {hour, minute}
+  var s = String(value).replace(/:$/, '').trim();
+  var match = s.match(/^(\d{1,2}):(\d{2})$/);
+  if (match) {
+    return { hour: parseInt(match[1]), minute: parseInt(match[2]) };
+  }
+  return null;
+}
+
+function padTime(n) {
+  return n < 10 ? '0' + n : String(n);
+}
+
+function addMinutes(hour, minute, add) {
+  minute += add;
+  if (minute >= 60) {
+    hour += Math.floor(minute / 60);
+    minute = minute % 60;
+  }
+  return padTime(hour) + ':' + padTime(minute);
+}
+
+function toLocationId(name) {
+  return name
+    .replace(/[\s　]/g, '_')
+    .replace(/[！!]/g, '')
+    .toLowerCase();
 }
