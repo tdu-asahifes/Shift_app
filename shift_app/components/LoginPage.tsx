@@ -18,7 +18,6 @@ export default function LoginPage({ onLogin }: Props) {
     const id = studentId.trim();
     const c = code.trim();
     if (!id) { setError('学籍番号を入力してください'); return; }
-    if (!/^\d+$/.test(id)) { setError('学籍番号は数字のみで入力してください'); return; }
     if (!c) { setError('ログインコードを入力してください'); return; }
 
     setLoading(true);
@@ -62,9 +61,8 @@ export default function LoginPage({ onLogin }: Props) {
             </label>
             <input
               type="text"
-              inputMode="numeric"
               className="input"
-              placeholder="例: 12345678"
+              placeholder="例: 22EC052"
               value={studentId}
               onChange={e => setStudentId(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && handleLogin()}
