@@ -347,6 +347,12 @@ function toLocationId(name) {
     .toLowerCase();
 }
 
+function padId(n) {
+  if (n < 10) return '00' + n;
+  if (n < 100) return '0' + n;
+  return String(n);
+}
+
 // ---------- 場所一覧の自動抽出 ----------
 
 // シフトとして扱わないセル値（除外リスト）
@@ -411,7 +417,8 @@ function extractLocations() {
 
   var names = Object.keys(locationSet).sort();
   for (var i = 0; i < names.length; i++) {
-    locSheet.appendRow([toLocationId(names[i]), names[i]]);
+    var id = 'loc' + padId(i + 1);
+    locSheet.appendRow([id, names[i]]);
   }
 
   SpreadsheetApp.getUi().alert(
