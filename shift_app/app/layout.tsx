@@ -2,10 +2,10 @@ import type { Metadata } from 'next';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: '文化祭シフト管理',
-  description: '文化祭当日のシフト・勤怠・鍵管理システム',
+  title: 'シフト・出退勤管理',
+  description: '学園祭実行委員向けシフト・出退勤管理システム',
   manifest: '/manifest.json',
-  appleWebApp: { capable: true, statusBarStyle: 'default', title: '文化祭シフト管理' },
+  appleWebApp: { capable: true, statusBarStyle: 'default', title: 'シフト管理' },
 };
 
 export const viewport = {
