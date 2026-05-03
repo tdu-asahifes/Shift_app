@@ -62,7 +62,7 @@ export default function LoginPage({ onLogin }: Props) {
             <input
               type="text"
               className="input"
-              placeholder="例: 22EC052"
+              placeholder="例: 99EC999"
               value={studentId}
               onChange={e => setStudentId(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && handleLogin()}
