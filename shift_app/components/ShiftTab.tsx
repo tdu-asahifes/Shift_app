@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useState, useCallback } from 'react';
 import { api } from '@/lib/gas';
+import { getToday } from '@/lib/session';
 import { LoginUser, Shift, AttendanceRecord } from '@/lib/types';
 
 interface Props {
@@ -33,7 +34,7 @@ export default function ShiftTab({ user }: Props) {
   const [shifts, setShifts] = useState<Shift[]>([]);
   const [attendance, setAttendance] = useState<AttendanceRecord[]>([]);
   const [loading, setLoading] = useState(true);
-  const today = new Date().toISOString().split('T')[0];
+  const today = getToday();
 
   const load = useCallback(async () => {
     try {

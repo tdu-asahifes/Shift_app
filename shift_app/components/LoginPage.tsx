@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { api } from '@/lib/gas';
 import { LoginUser } from '@/lib/types';
-import { saveSession } from '@/lib/session';
+import { saveSession, getToday } from '@/lib/session';
 
 interface Props {
   onLogin: (user: LoginUser) => void;
@@ -28,7 +28,7 @@ export default function LoginPage({ onLogin }: Props) {
       const user: LoginUser = {
         studentId: id,
         name: res.name,
-        loginDate: new Date().toISOString().split('T')[0],
+        loginDate: getToday(),
       };
       saveSession(user);
       onLogin(user);

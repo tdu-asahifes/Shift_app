@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useState, useCallback } from 'react';
 import { api } from '@/lib/gas';
+import { getToday } from '@/lib/session';
 import { LoginUser, Shift } from '@/lib/types';
 import MemberStatus from './MemberStatus';
 
@@ -19,7 +20,7 @@ export default function CheckInTab({ user, locationId }: Props) {
   const [nextShift, setNextShift] = useState<Shift | null>(null);
   const [locationName, setLocationName] = useState('');
   const [checkedInTime, setCheckedInTime] = useState('');
-  const today = new Date().toISOString().split('T')[0];
+  const today = getToday();
 
   const loadShifts = useCallback(async () => {
     try {
@@ -67,6 +68,19 @@ export default function CheckInTab({ user, locationId }: Props) {
           setState('wrong_location');
           // 迷子ログ保存
           api.saveLostLog(user.studentId, locationId).catch(() => {});
+          return;
+        }
+
+        // 既に出勤済みかチェック
+        const attendance = await api.getMyAttendance(user.studentId, today);
+        const activeHere = attendance.find(
+          a => a.locationId === locationId && !a.checkOutAt
+        );
+        if (activeHere) {
+          setCheckedInTime(
+            new Date(activeHere.checkInAt).toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' })
+          );
+          setState('done');
         }
       }
     } catch {
