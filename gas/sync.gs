@@ -65,6 +65,8 @@ function onOpen() {
 // ---------- 同期メイン ----------
 
 function syncAll() {
+  // shiftsを先に削除（外部キー制約のため）
+  supabaseRequest('shifts?id=gt.0', 'DELETE');
   syncLocations();
   syncDailyCodes();
   syncShiftsFromMatrix();
@@ -72,6 +74,7 @@ function syncAll() {
 }
 
 function syncAllSilent() {
+  supabaseRequest('shifts?id=gt.0', 'DELETE');
   syncLocations();
   syncDailyCodes();
   syncShiftsFromMatrix();
@@ -154,9 +157,6 @@ function syncShiftsFromMatrix() {
     }
   }
 
-  // 既存シフトを削除
-  supabaseRequest('shifts?id=gt.0', 'DELETE');
-
   var totalShifts = 0;
 
   // 各日付シートを処理
@@ -204,7 +204,7 @@ function convertMatrixSheet(sheet, date, locationMap) {
 
   // 各行（人）を処理
   for (var r = 1; r < data.length; r++) {
-    var studentId = String(data[r][COL_STUDENT_ID] || '').trim();
+    var studentId = String(data[r][COL_STUDENT_ID] || '').trim().toUpperCase();
     var name = String(data[r][COL_NAME] || '').trim();
     if (!studentId || !name) continue;
 
@@ -318,6 +318,10 @@ function formatDate(value) {
 }
 
 function parseTimeHeader(value) {
+  // Date型の場合（スプレッドシートが時刻として認識した場合）
+  if (value instanceof Date) {
+    return { hour: value.getHours(), minute: value.getMinutes() };
+  }
   // "8:00", "8:30", "10:00:" など → {hour, minute}
   var s = String(value).replace(/:$/, '').trim();
   var match = s.match(/^(\d{1,2}):(\d{2})$/);

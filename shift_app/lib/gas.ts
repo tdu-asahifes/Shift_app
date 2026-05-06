@@ -5,8 +5,7 @@ import { getToday } from './session';
 export const api = {
   /** ログイン認証 */
   async login(studentId: string, code: string): Promise<{ name: string }> {
-    // 学籍番号を小文字に正規化（DB側が小文字の場合に対応）
-    studentId = studentId.toLowerCase();
+    studentId = studentId.toUpperCase();
     // 当日コード照合
     const today = getToday();
     const { data: codeRow, error: codeErr } = await supabase
@@ -42,7 +41,7 @@ export const api = {
 
   /** 自分のシフト取得 */
   async getMyShifts(studentId: string, date: string): Promise<Shift[]> {
-    studentId = studentId.toLowerCase();
+    studentId = studentId.toUpperCase();
     const { data, error } = await supabase
       .from('shifts')
       .select('*, locations(location_name)')
@@ -87,7 +86,7 @@ export const api = {
 
   /** 出勤打刻（自動退勤処理込み） */
   async checkIn(studentId: string, locationId: string): Promise<{ success: boolean }> {
-    studentId = studentId.toLowerCase();
+    studentId = studentId.toUpperCase();
     const today = getToday();
     const now = new Date().toISOString();
 
@@ -130,7 +129,7 @@ export const api = {
 
   /** 迷子ログ保存 */
   async saveLostLog(studentId: string, locationId: string): Promise<{ success: boolean }> {
-    studentId = studentId.toLowerCase();
+    studentId = studentId.toUpperCase();
     const { error } = await supabase.from('lost_logs').insert({
       student_id: studentId,
       scanned_location_id: locationId,
@@ -141,7 +140,7 @@ export const api = {
 
   /** 自分の打刻履歴 */
   async getMyAttendance(studentId: string, date: string): Promise<AttendanceRecord[]> {
-    studentId = studentId.toLowerCase();
+    studentId = studentId.toUpperCase();
     const { data, error } = await supabase
       .from('attendance')
       .select('*, locations(location_name)')
