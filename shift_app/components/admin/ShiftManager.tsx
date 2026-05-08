@@ -214,6 +214,7 @@ export default function ShiftManager() {
           locationId,
           startTime,
           endTime,
+          department: '',
           notice: '',
         });
       }

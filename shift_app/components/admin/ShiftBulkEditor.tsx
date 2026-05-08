@@ -62,6 +62,7 @@ export default function ShiftBulkEditor({ date, locations, onSave, onCancel }: P
         locationId: r.locationId,
         startTime: r.startTime,
         endTime: r.endTime,
+        department: '',
         notice: r.notice,
       })));
       onSave();
