@@ -80,13 +80,27 @@ GAS（`gas/sync.gs`）をスクリプトエディタに貼り付け、スクリ�
 
 ### 4. デプロイ
 
+Vercelにホスティング。GitHubとの自動連携は未設定のため、手動デプロイ。
+
 ```bash
-cd shift_app
-npx vercel login
+# リポジトリのルートから実行（shift_app内からではない）
+cd /path/to/Shift_app
 npx vercel --prod
 ```
 
-環境変数（`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`）をVercelに設定。
+> **注意**: Vercel側のRoot Directoryが `shift_app` に設定されているため、必ずリポジトリのルートから実行すること。`shift_app/` 内から実行すると `shift_app/shift_app` を探してエラーになる。
+
+初回のみ:
+```bash
+npx vercel login
+```
+
+環境変数（`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`）はVercelのダッシュボードで設定済み。
+
+### 5. GASの更新
+
+`gas/sync.gs` を変更した場合、GASのスクリプトエディタに手動で貼り付けて保存する。
+同期を反映するにはスプレッドシートの「シフト管理 → Supabaseに同期」を実行。
 
 ## QRコード
 
@@ -96,4 +110,15 @@ npx vercel --prod
 https://<デプロイURL>/check?location=<場所ID>
 ```
 
-例: `https://example.vercel.app/check?location=uketsuke`
+### QRコード一括生成
+
+Supabaseの場所一覧から全場所のQRコードを自動生成できる。
+
+```bash
+cd shift_app
+NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJ... node scripts/generate-qr.mjs <デプロイURL>
+```
+
+出力:
+- `qr_codes/*.png` — 各場所のQR画像
+- `qr_codes/all.pdf` — 全場所を1ページ1枚でまとめたPDF（場所名付き・印刷用）
