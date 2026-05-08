@@ -5,10 +5,10 @@ import { Location } from '@/lib/types';
 import { Plus, Pencil, Trash2, Save, X, QrCode, Download } from 'lucide-react';
 
 const PRESET_COLORS = [
-  '#dbeafe', '#dcfce7', '#fef9c3', '#fce7f3', '#e0e7ff',
-  '#ccfbf1', '#fde68a', '#f3e8ff', '#ffe4e6', '#cffafe',
-  '#d9f99d', '#fbcfe8', '#c7d2fe', '#bae6fd', '#fecaca',
-  '#f5d0fe', '#a7f3d0', '#fecdd3', '#c4b5fd', '#bfdbfe',
+  '#3b82f6', '#ef4444', '#22c55e', '#f59e0b', '#8b5cf6',
+  '#ec4899', '#06b6d4', '#f97316', '#14b8a6', '#6366f1',
+  '#84cc16', '#e11d48', '#0ea5e9', '#d946ef', '#10b981',
+  '#eab308', '#64748b', '#a855f7', '#fb923c', '#2dd4bf',
 ];
 
 export default function LocationManager() {
@@ -20,11 +20,13 @@ export default function LocationManager() {
   const [newId, setNewId] = useState('');
   const [newName, setNewName] = useState('');
   const [newColor, setNewColor] = useState(PRESET_COLORS[0]);
+  const [newCategory, setNewCategory] = useState('');
 
   // 場所編集
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState('');
   const [editColor, setEditColor] = useState('');
+  const [editCategory, setEditCategory] = useState('');
 
   // コード追加フォーム
   const [newCodeDate, setNewCodeDate] = useState('');
@@ -55,10 +57,11 @@ export default function LocationManager() {
   const handleAddLocation = async () => {
     if (!newId.trim() || !newName.trim()) return;
     try {
-      await adminApi.createLocation(newId.trim(), newName.trim(), newColor);
+      await adminApi.createLocation(newId.trim(), newName.trim(), newColor, newCategory.trim());
       setNewId('');
       setNewName('');
       setNewColor(PRESET_COLORS[0]);
+      setNewCategory('');
       load();
     } catch (e) {
       alert(e instanceof Error ? e.message : '追加に失敗');
@@ -67,7 +70,7 @@ export default function LocationManager() {
 
   const handleUpdateLocation = async (id: string) => {
     try {
-      await adminApi.updateLocation(id, { locationName: editName, color: editColor });
+      await adminApi.updateLocation(id, { locationName: editName, color: editColor, category: editCategory });
       setEditingId(null);
       load();
     } catch (e) {
@@ -139,6 +142,8 @@ export default function LocationManager() {
             onChange={e => setNewId(e.target.value)} style={{ width: '7rem' }} />
           <input className="input" placeholder="場所名" value={newName}
             onChange={e => setNewName(e.target.value)} style={{ flex: 1, minWidth: '6rem' }} />
+          <input className="input" placeholder="カテゴリ" value={newCategory}
+            onChange={e => setNewCategory(e.target.value)} style={{ width: '6rem' }} />
           <ColorPicker value={newColor} onChange={setNewColor} />
           <button className="btn btn-primary" onClick={handleAddLocation} style={btnStyle}>
             <Plus size={16} /><span>追加</span>
@@ -153,6 +158,7 @@ export default function LocationManager() {
                 <th style={{ textAlign: 'left', padding: '0.5rem', width: '2rem' }}>色</th>
                 <th style={{ textAlign: 'left', padding: '0.5rem' }}>場所ID</th>
                 <th style={{ textAlign: 'left', padding: '0.5rem' }}>場所名</th>
+                <th style={{ textAlign: 'left', padding: '0.5rem' }}>カテゴリ</th>
                 <th style={{ textAlign: 'right', padding: '0.5rem', width: '6rem' }}>操作</th>
               </tr>
             </thead>
@@ -180,6 +186,14 @@ export default function LocationManager() {
                       loc.locationName
                     )}
                   </td>
+                  <td style={{ padding: '0.5rem', fontSize: '0.8rem' }}>
+                    {editingId === loc.locationId ? (
+                      <input className="input" value={editCategory} onChange={e => setEditCategory(e.target.value)}
+                        style={{ width: '100%' }} placeholder="カテゴリ" />
+                    ) : (
+                      <span style={{ color: '#6b7280' }}>{loc.category || '-'}</span>
+                    )}
+                  </td>
                   <td style={{ padding: '0.5rem', textAlign: 'right' }}>
                     {editingId === loc.locationId ? (
                       <span style={{ display: 'flex', gap: '0.25rem', justifyContent: 'flex-end' }}>
@@ -194,7 +208,7 @@ export default function LocationManager() {
                       </span>
                     ) : (
                       <span style={{ display: 'flex', gap: '0.25rem', justifyContent: 'flex-end' }}>
-                        <button onClick={() => { setEditingId(loc.locationId); setEditName(loc.locationName); setEditColor(loc.color || '#e5e7eb'); }}
+                        <button onClick={() => { setEditingId(loc.locationId); setEditName(loc.locationName); setEditColor(loc.color || '#e5e7eb'); setEditCategory(loc.category || ''); }}
                           style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#2563eb' }}>
                           <Pencil size={16} />
                         </button>

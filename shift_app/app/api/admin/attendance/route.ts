@@ -29,9 +29,16 @@ export async function GET(request: Request) {
   const attendance = attendanceRes.data || [];
 
   // 場所ごとにグルーピング
+  // 場所マスタ取得（カテゴリ情報のため）
+  const { data: locMaster } = await getSupabaseAdmin()
+    .from('locations')
+    .select('location_id, category');
+  const categoryMap = new Map((locMaster || []).map(l => [l.location_id, l.category || '']));
+
   const locationMap = new Map<string, {
     locationId: string;
     locationName: string;
+    category: string;
     members: {
       studentId: string;
       name: string;
@@ -47,6 +54,7 @@ export async function GET(request: Request) {
       locationMap.set(locId, {
         locationId: locId,
         locationName: s.locations?.location_name || locId,
+        category: categoryMap.get(locId) || '',
         members: [],
       });
     }

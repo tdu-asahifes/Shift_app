@@ -6,7 +6,8 @@
 create table locations (
   location_id text primary key,
   location_name text not null,
-  color text default ''
+  color text default '',
+  category text default ''
 );
 
 -- シフトデータ（GASからスプシ同期）

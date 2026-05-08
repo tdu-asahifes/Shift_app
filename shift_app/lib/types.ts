@@ -34,6 +34,7 @@ export interface Location {
   locationId: string;
   locationName: string;
   color?: string;
+  category?: string;
 }
 
 // メンバー出勤状況

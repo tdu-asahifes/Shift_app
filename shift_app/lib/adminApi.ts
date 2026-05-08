@@ -29,6 +29,7 @@ export interface LostLog {
 export interface LocationAttendance {
   locationId: string;
   locationName: string;
+  category: string;
   members: MemberStatus[];
   summary: { working: number; left: number; notYet: number; total: number };
 }
@@ -98,14 +99,14 @@ export const adminApi = {
     return request('locations');
   },
 
-  async createLocation(locationId: string, locationName: string, color?: string): Promise<void> {
+  async createLocation(locationId: string, locationName: string, color?: string, category?: string): Promise<void> {
     await request('locations', {
       method: 'POST',
-      body: JSON.stringify({ locationId, locationName, color }),
+      body: JSON.stringify({ locationId, locationName, color, category }),
     });
   },
 
-  async updateLocation(id: string, data: { locationName?: string; color?: string }): Promise<void> {
+  async updateLocation(id: string, data: { locationName?: string; color?: string; category?: string }): Promise<void> {
     await request(`locations/${encodeURIComponent(id)}`, {
       method: 'PUT',
       body: JSON.stringify(data),

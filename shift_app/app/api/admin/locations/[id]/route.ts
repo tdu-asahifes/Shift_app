@@ -7,10 +7,11 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
   if (authError) return authError;
 
   const { id } = await params;
-  const { locationName, color } = await request.json();
+  const { locationName, color, category } = await request.json();
   const update: Record<string, string> = {};
   if (locationName !== undefined) update.location_name = locationName;
   if (color !== undefined) update.color = color;
+  if (category !== undefined) update.category = category;
   const { error } = await getSupabaseAdmin()
     .from('locations')
     .update(update)

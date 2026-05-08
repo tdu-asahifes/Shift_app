@@ -298,12 +298,12 @@ export default function ShiftManager() {
             {matrix.length === 0 ? 'この日のシフトはありません' : '該当するシフトがありません'}
           </div>
         ) : (
-          <div style={{ overflowX: 'auto', userSelect: 'none' }}>
+          <div style={{ overflowX: 'auto', overflowY: 'auto', maxHeight: '70vh', userSelect: 'none' }}>
             <table style={{ borderCollapse: 'collapse', fontSize: '0.75rem', whiteSpace: 'nowrap' }}>
               <thead>
                 <tr>
                   <th style={{
-                    position: 'sticky', left: 0, background: '#fff', zIndex: 10,
+                    position: 'sticky', left: 0, top: 0, background: '#fff', zIndex: 20,
                     padding: '0.375rem 0.5rem', borderBottom: '2px solid #e5e7eb',
                     textAlign: 'left', minWidth: '5rem',
                   }}>
@@ -311,6 +311,7 @@ export default function ShiftManager() {
                   </th>
                   {visibleSlots.map(slot => (
                     <th key={slot} style={{
+                      position: 'sticky', top: 0, background: '#fff', zIndex: 5,
                       padding: '0.375rem 0.125rem', borderBottom: '2px solid #e5e7eb',
                       textAlign: 'center', minWidth: '1.25rem', width: '1.25rem',
                       borderLeft: slot.endsWith(':00') ? '1px solid #d1d5db' : 'none',
@@ -362,7 +363,8 @@ export default function ShiftManager() {
                           }
                         }
 
-                        const locColor = cell ? (locations.find(l => l.locationId === cell.locationId)?.color || '#e0f2fe') : '#fff';
+                        const rawColor = cell ? (locations.find(l => l.locationId === cell.locationId)?.color || '') : '';
+                        const locColor = cell ? (rawColor ? rawColor + '30' : '#e0f2fe') : '#fff';
                         const bg = anySelected ? '#fef3c7' : locColor;
 
                         return (
