@@ -10,6 +10,7 @@ export interface AdminShift {
   locationId: string;
   locationName: string;
   department: string;
+  role: string;
   notice: string;
 }
 

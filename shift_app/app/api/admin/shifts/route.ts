@@ -30,6 +30,7 @@ export async function GET(request: Request) {
       locationId: r.location_id,
       locationName: r.locations?.location_name || r.location_id,
       department: r.department || '',
+      role: r.role || '',
       notice: r.notice || '',
     }))
   );
@@ -49,6 +50,8 @@ export async function POST(request: Request) {
     name: r.name,
     student_id: r.studentId.toUpperCase(),
     location_id: r.locationId,
+    department: r.department || '',
+    role: r.role || '',
     notice: r.notice || '',
   }));
 

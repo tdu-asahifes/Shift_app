@@ -20,6 +20,7 @@ create table shifts (
   student_id text not null,
   location_id text not null references locations(location_id),
   department text default '',
+  role text default '',
   notice text default ''
 );
 

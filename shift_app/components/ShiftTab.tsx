@@ -3,7 +3,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { api } from '@/lib/gas';
 import { getToday } from '@/lib/session';
 import { LoginUser, Shift, AttendanceRecord } from '@/lib/types';
-import { X, MapPin, Clock } from 'lucide-react';
+import { X, MapPin, Clock, Users } from 'lucide-react';
 
 interface Props {
   user: LoginUser;
@@ -140,17 +140,24 @@ export default function ShiftTab({ user }: Props) {
                     flexDirection: 'column',
                   }}
                 >
+                  {shift.role && (
+                    <span style={{
+                      fontSize: '0.6rem', fontWeight: 700,
+                      color: status === 'not_yet' ? '#374151' : '#fff',
+                      lineHeight: 1.2,
+                    }}>
+                      {shift.role}
+                    </span>
+                  )}
                   <span style={{
-                    fontSize: '0.65rem', fontWeight: 700,
-                    color: status === 'not_yet' ? '#374151' : '#fff',
-                    lineHeight: 1.2,
+                    fontSize: '0.6rem',
+                    color: status === 'not_yet' ? '#6b7280' : 'rgba(255,255,255,0.85)',
                   }}>
                     {shift.locationName}
                   </span>
                   <span style={{
-                    fontSize: '0.6rem',
-                    color: status === 'not_yet' ? '#6b7280' : 'rgba(255,255,255,0.85)',
-                    marginTop: '0.125rem',
+                    fontSize: '0.55rem',
+                    color: status === 'not_yet' ? '#9ca3af' : 'rgba(255,255,255,0.7)',
                   }}>
                     {shift.time}
                   </span>
@@ -271,11 +278,22 @@ export default function ShiftTab({ user }: Props) {
                     </span>
                   </div>
 
+                  {/* 役割 */}
+                  {selectedShift.role && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <Users size={18} style={{ color: '#6b7280', flexShrink: 0 }} />
+                      <div>
+                        <div style={{ fontSize: '0.75rem', color: '#6b7280' }}>担当</div>
+                        <div style={{ fontSize: '1rem', fontWeight: 600 }}>{selectedShift.role}</div>
+                      </div>
+                    </div>
+                  )}
+
                   {/* 場所 */}
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                     <MapPin size={18} style={{ color: '#6b7280', flexShrink: 0 }} />
                     <div>
-                      <div style={{ fontSize: '0.75rem', color: '#6b7280' }}>担当場所</div>
+                      <div style={{ fontSize: '0.75rem', color: '#6b7280' }}>場所</div>
                       <div style={{ fontSize: '1rem', fontWeight: 600 }}>{selectedShift.locationName}</div>
                     </div>
                   </div>

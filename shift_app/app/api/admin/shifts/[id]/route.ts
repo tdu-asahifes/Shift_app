@@ -16,6 +16,8 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
   if (body.name) update.name = body.name;
   if (body.studentId) update.student_id = body.studentId.toUpperCase();
   if (body.locationId) update.location_id = body.locationId;
+  if (body.department !== undefined) update.department = body.department;
+  if (body.role !== undefined) update.role = body.role;
   if (body.notice !== undefined) update.notice = body.notice;
 
   const { error } = await getSupabaseAdmin()

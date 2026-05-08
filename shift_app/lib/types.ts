@@ -15,6 +15,7 @@ export interface Shift {
   studentId: string;
   locationId: string;
   locationName: string;
+  role: string;
   notice: string;
 }
 

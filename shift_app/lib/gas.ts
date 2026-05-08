@@ -58,6 +58,7 @@ export const api = {
       studentId: r.student_id,
       locationId: r.location_id,
       locationName: r.locations?.location_name || r.location_id,
+      role: r.role || '',
       notice: r.notice || '',
     }));
   },
@@ -80,6 +81,7 @@ export const api = {
       studentId: r.student_id,
       locationId: r.location_id,
       locationName: r.locations?.location_name || r.location_id,
+      role: r.role || '',
       notice: r.notice || '',
     }));
   },

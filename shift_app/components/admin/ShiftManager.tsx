@@ -215,6 +215,7 @@ export default function ShiftManager() {
           startTime,
           endTime,
           department: '',
+          role: '',
           notice: '',
         });
       }

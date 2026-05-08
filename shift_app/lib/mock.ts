@@ -17,11 +17,11 @@ const MOCK_USERS: Record<string, string> = {
 };
 
 const MOCK_SHIFTS: Shift[] = [
-  { date: today, time: '9:00-12:00', startTime: '09:00', endTime: '12:00', name: '山田 太郎', studentId: '12345678', locationId: 'uketsuke', locationName: '受付', notice: '来場者リストを確認してください' },
-  { date: today, time: '13:00-16:00', startTime: '13:00', endTime: '16:00', name: '山田 太郎', studentId: '12345678', locationId: 'stage', locationName: 'ステージ', notice: '' },
-  { date: today, time: '9:00-12:00', startTime: '09:00', endTime: '12:00', name: '佐藤 花子', studentId: '23456789', locationId: 'uketsuke', locationName: '受付', notice: '' },
-  { date: today, time: '12:00-15:00', startTime: '12:00', endTime: '15:00', name: '鈴木 一郎', studentId: '34567890', locationId: 'uketsuke', locationName: '受付', notice: '' },
-  { date: today, time: '10:00-14:00', startTime: '10:00', endTime: '14:00', name: '田中 美咲', studentId: '45678901', locationId: 'stage', locationName: 'ステージ', notice: 'マイクテスト14時から' },
+  { date: today, time: '9:00-12:00', startTime: '09:00', endTime: '12:00', name: '山田 太郎', studentId: '12345678', locationId: 'uketsuke', locationName: '受付', role: '受付対応', notice: '来場者リストを確認してください' },
+  { date: today, time: '13:00-16:00', startTime: '13:00', endTime: '16:00', name: '山田 太郎', studentId: '12345678', locationId: 'stage', locationName: 'ステージ', role: '', notice: '' },
+  { date: today, time: '9:00-12:00', startTime: '09:00', endTime: '12:00', name: '佐藤 花子', studentId: '23456789', locationId: 'uketsuke', locationName: '受付', role: '', notice: '' },
+  { date: today, time: '12:00-15:00', startTime: '12:00', endTime: '15:00', name: '鈴木 一郎', studentId: '34567890', locationId: 'uketsuke', locationName: '受付', role: '', notice: '' },
+  { date: today, time: '10:00-14:00', startTime: '10:00', endTime: '14:00', name: '田中 美咲', studentId: '45678901', locationId: 'stage', locationName: 'ステージ', role: 'マイク担当', notice: 'マイクテスト14時から' },
 ];
 
 // メモリ上の打刻データ

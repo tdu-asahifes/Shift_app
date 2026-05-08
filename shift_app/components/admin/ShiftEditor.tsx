@@ -28,7 +28,7 @@ export default function ShiftEditor({ date, locations, shift, onSave, onCancel }
     }
     setSaving(true);
     try {
-      const data = { date, studentId: studentId.toUpperCase(), name, locationId, startTime, endTime, department: '', notice };
+      const data = { date, studentId: studentId.toUpperCase(), name, locationId, startTime, endTime, department: '', role: '', notice };
       if (shift) {
         await adminApi.updateShift(shift.id, data);
       } else {
