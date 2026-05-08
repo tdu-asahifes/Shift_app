@@ -127,8 +127,8 @@ export default function ShiftTab({ user }: Props) {
                   style={{
                     position: 'absolute',
                     top: `${top}%`,
-                    left: `${i * 5}rem`,
-                    width: '4.5rem',
+                    left: 0,
+                    right: 0,
                     height: `${height}%`,
                     backgroundColor: color.bar,
                     borderRadius: '0.375rem',
