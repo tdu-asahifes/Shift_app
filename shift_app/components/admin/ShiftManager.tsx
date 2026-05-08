@@ -305,16 +305,16 @@ export default function ShiftManager() {
                   <th style={{
                     position: 'sticky', left: 0, background: '#fff', zIndex: 10,
                     padding: '0.375rem 0.5rem', borderBottom: '2px solid #e5e7eb',
-                    textAlign: 'left', minWidth: '6rem',
+                    textAlign: 'left', minWidth: '5rem',
                   }}>
                     名前
                   </th>
                   {visibleSlots.map(slot => (
                     <th key={slot} style={{
                       padding: '0.375rem 0.125rem', borderBottom: '2px solid #e5e7eb',
-                      textAlign: 'center', minWidth: '2.5rem',
-                      borderLeft: slot.endsWith(':00') ? '1px solid #d1d5db' : '1px solid #f3f4f6',
-                      fontSize: '0.65rem', color: '#6b7280',
+                      textAlign: 'center', minWidth: '1.25rem', width: '1.25rem',
+                      borderLeft: slot.endsWith(':00') ? '1px solid #d1d5db' : 'none',
+                      fontSize: '0.6rem', color: '#6b7280',
                     }}>
                       {slot.endsWith(':00') ? slot : ''}
                     </th>
@@ -379,10 +379,10 @@ export default function ShiftManager() {
                             style={{
                               padding: 0,
                               borderBottom: '1px solid #f3f4f6',
-                              borderLeft: slot.endsWith(':00') ? '1px solid #d1d5db' : '1px solid #e5e7eb',
+                              borderLeft: slot.endsWith(':00') ? '1px solid #d1d5db' : 'none',
                               background: bg,
                               cursor: 'crosshair',
-                              height: '2.5rem',
+                              height: '2rem',
                               position: 'relative',
                               textAlign: 'center',
                               borderRight: isStart && span > 1 ? '1px solid #93c5fd' : undefined,
