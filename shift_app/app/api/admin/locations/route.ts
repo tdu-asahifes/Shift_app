@@ -1,0 +1,33 @@
+import { NextResponse } from 'next/server';
+import { verifyAdmin } from '@/lib/adminAuth';
+import { getSupabaseAdmin } from '@/lib/supabaseAdmin';
+
+export async function GET(request: Request) {
+  const authError = await verifyAdmin();
+  if (authError) return authError;
+
+  const { data, error } = await getSupabaseAdmin()
+    .from('locations')
+    .select('*')
+    .order('location_id');
+
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+  return NextResponse.json(
+    (data || []).map(r => ({ locationId: r.location_id, locationName: r.location_name }))
+  );
+}
+
+export async function POST(request: Request) {
+  const authError = await verifyAdmin();
+  if (authError) return authError;
+
+  const { locationId, locationName } = await request.json();
+  const { error } = await getSupabaseAdmin().from('locations').insert({
+    location_id: locationId,
+    location_name: locationName,
+  });
+
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  return NextResponse.json({ ok: true });
+}
