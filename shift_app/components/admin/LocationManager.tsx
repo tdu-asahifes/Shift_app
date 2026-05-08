@@ -2,7 +2,14 @@
 import { useState, useEffect, useCallback } from 'react';
 import { adminApi, DailyCode } from '@/lib/adminApi';
 import { Location } from '@/lib/types';
-import { Plus, Pencil, Trash2, Save, X } from 'lucide-react';
+import { Plus, Pencil, Trash2, Save, X, QrCode, Download } from 'lucide-react';
+
+const PRESET_COLORS = [
+  '#dbeafe', '#dcfce7', '#fef9c3', '#fce7f3', '#e0e7ff',
+  '#ccfbf1', '#fde68a', '#f3e8ff', '#ffe4e6', '#cffafe',
+  '#d9f99d', '#fbcfe8', '#c7d2fe', '#bae6fd', '#fecaca',
+  '#f5d0fe', '#a7f3d0', '#fecdd3', '#c4b5fd', '#bfdbfe',
+];
 
 export default function LocationManager() {
   const [locations, setLocations] = useState<Location[]>([]);
@@ -12,14 +19,20 @@ export default function LocationManager() {
   // 場所追加フォーム
   const [newId, setNewId] = useState('');
   const [newName, setNewName] = useState('');
+  const [newColor, setNewColor] = useState(PRESET_COLORS[0]);
 
   // 場所編集
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState('');
+  const [editColor, setEditColor] = useState('');
 
   // コード追加フォーム
   const [newCodeDate, setNewCodeDate] = useState('');
   const [newCodeValue, setNewCodeValue] = useState('');
+
+  // QRコード
+  const [qrCodes, setQrCodes] = useState<{ locationId: string; locationName: string; url: string; qrDataUrl: string }[] | null>(null);
+  const [qrLoading, setQrLoading] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -42,9 +55,10 @@ export default function LocationManager() {
   const handleAddLocation = async () => {
     if (!newId.trim() || !newName.trim()) return;
     try {
-      await adminApi.createLocation(newId.trim(), newName.trim());
+      await adminApi.createLocation(newId.trim(), newName.trim(), newColor);
       setNewId('');
       setNewName('');
+      setNewColor(PRESET_COLORS[0]);
       load();
     } catch (e) {
       alert(e instanceof Error ? e.message : '追加に失敗');
@@ -53,7 +67,7 @@ export default function LocationManager() {
 
   const handleUpdateLocation = async (id: string) => {
     try {
-      await adminApi.updateLocation(id, editName);
+      await adminApi.updateLocation(id, { locationName: editName, color: editColor });
       setEditingId(null);
       load();
     } catch (e) {
@@ -83,6 +97,26 @@ export default function LocationManager() {
     }
   };
 
+  const handleGenerateQr = async () => {
+    const baseUrl = window.location.origin;
+    setQrLoading(true);
+    try {
+      setQrCodes(await adminApi.getQrCodes(baseUrl));
+    } catch (e) {
+      alert(e instanceof Error ? e.message : 'QRコード生成に失敗');
+    } finally {
+      setQrLoading(false);
+    }
+  };
+
+  const handlePrintQr = () => {
+    window.print();
+  };
+
+  const btnStyle: React.CSSProperties = {
+    display: 'flex', alignItems: 'center', gap: '0.25rem', background: '#d97706',
+  };
+
   if (loading) {
     return <div style={{ textAlign: 'center', padding: '2rem', color: '#6b7280' }}>読み込み中...</div>;
   }
@@ -91,26 +125,23 @@ export default function LocationManager() {
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
       {/* 場所一覧 */}
       <div className="card" style={{ padding: '1.25rem' }}>
-        <h2 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: '1rem' }}>場所一覧</h2>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+          <h2 style={{ fontSize: '1rem', fontWeight: 700, margin: 0 }}>場所一覧</h2>
+          <button className="btn" onClick={handleGenerateQr} disabled={qrLoading}
+            style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.8rem' }}>
+            <QrCode size={16} /> {qrLoading ? '生成中...' : 'QRコード生成'}
+          </button>
+        </div>
 
         {/* 追加フォーム */}
-        <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem', flexWrap: 'wrap' }}>
-          <input
-            className="input"
-            placeholder="場所ID"
-            value={newId}
-            onChange={e => setNewId(e.target.value)}
-            style={{ width: '8rem' }}
-          />
-          <input
-            className="input"
-            placeholder="場所名"
-            value={newName}
-            onChange={e => setNewName(e.target.value)}
-            style={{ flex: 1, minWidth: '8rem' }}
-          />
-          <button className="btn btn-primary" onClick={handleAddLocation} style={{ background: '#d97706' }}>
-            <Plus size={16} /> 追加
+        <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem', flexWrap: 'wrap', alignItems: 'center' }}>
+          <input className="input" placeholder="場所ID" value={newId}
+            onChange={e => setNewId(e.target.value)} style={{ width: '7rem' }} />
+          <input className="input" placeholder="場所名" value={newName}
+            onChange={e => setNewName(e.target.value)} style={{ flex: 1, minWidth: '6rem' }} />
+          <ColorPicker value={newColor} onChange={setNewColor} />
+          <button className="btn btn-primary" onClick={handleAddLocation} style={btnStyle}>
+            <Plus size={16} /><span>追加</span>
           </button>
         </div>
 
@@ -119,6 +150,7 @@ export default function LocationManager() {
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.875rem' }}>
             <thead>
               <tr style={{ borderBottom: '2px solid #e5e7eb' }}>
+                <th style={{ textAlign: 'left', padding: '0.5rem', width: '2rem' }}>色</th>
                 <th style={{ textAlign: 'left', padding: '0.5rem' }}>場所ID</th>
                 <th style={{ textAlign: 'left', padding: '0.5rem' }}>場所名</th>
                 <th style={{ textAlign: 'right', padding: '0.5rem', width: '6rem' }}>操作</th>
@@ -127,18 +159,23 @@ export default function LocationManager() {
             <tbody>
               {locations.map(loc => (
                 <tr key={loc.locationId} style={{ borderBottom: '1px solid #f3f4f6' }}>
+                  <td style={{ padding: '0.5rem' }}>
+                    {editingId === loc.locationId ? (
+                      <ColorPicker value={editColor} onChange={setEditColor} />
+                    ) : (
+                      <div style={{
+                        width: '1.25rem', height: '1.25rem', borderRadius: '4px',
+                        background: loc.color || '#e5e7eb', border: '1px solid #d1d5db',
+                      }} />
+                    )}
+                  </td>
                   <td style={{ padding: '0.5rem', fontFamily: 'monospace', fontSize: '0.8rem' }}>
                     {loc.locationId}
                   </td>
                   <td style={{ padding: '0.5rem' }}>
                     {editingId === loc.locationId ? (
-                      <input
-                        className="input"
-                        value={editName}
-                        onChange={e => setEditName(e.target.value)}
-                        style={{ width: '100%' }}
-                        autoFocus
-                      />
+                      <input className="input" value={editName} onChange={e => setEditName(e.target.value)}
+                        style={{ width: '100%' }} autoFocus />
                     ) : (
                       loc.locationName
                     )}
@@ -157,7 +194,7 @@ export default function LocationManager() {
                       </span>
                     ) : (
                       <span style={{ display: 'flex', gap: '0.25rem', justifyContent: 'flex-end' }}>
-                        <button onClick={() => { setEditingId(loc.locationId); setEditName(loc.locationName); }}
+                        <button onClick={() => { setEditingId(loc.locationId); setEditName(loc.locationName); setEditColor(loc.color || '#e5e7eb'); }}
                           style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#2563eb' }}>
                           <Pencil size={16} />
                         </button>
@@ -178,32 +215,50 @@ export default function LocationManager() {
         </p>
       </div>
 
+      {/* QRコード一覧 */}
+      {qrCodes && (
+        <div className="card" style={{ padding: '1.25rem' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+            <h2 style={{ fontSize: '1rem', fontWeight: 700, margin: 0 }}>QRコード</h2>
+            <div style={{ display: 'flex', gap: '0.5rem' }}>
+              <button className="btn" onClick={handlePrintQr}
+                style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.8rem' }}>
+                <Download size={16} /> 印刷
+              </button>
+              <button className="btn" onClick={() => setQrCodes(null)}
+                style={{ fontSize: '0.8rem' }}>
+                <X size={16} />
+              </button>
+            </div>
+          </div>
+          <div id="qr-print-area" style={{
+            display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(10rem, 1fr))', gap: '1rem',
+          }}>
+            {qrCodes.map(qr => (
+              <div key={qr.locationId} style={{ textAlign: 'center', padding: '0.5rem', border: '1px solid #e5e7eb', borderRadius: '0.5rem' }}>
+                <img src={qr.qrDataUrl} alt={qr.locationName} style={{ width: '100%', maxWidth: '8rem', margin: '0 auto' }} />
+                <div style={{ fontSize: '0.8rem', fontWeight: 600, marginTop: '0.25rem' }}>{qr.locationName}</div>
+                <div style={{ fontSize: '0.6rem', color: '#9ca3af' }}>{qr.locationId}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* 当日コード */}
       <div className="card" style={{ padding: '1.25rem' }}>
         <h2 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: '1rem' }}>当日ログインコード</h2>
 
-        {/* 追加/更新フォーム */}
-        <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem', flexWrap: 'wrap' }}>
-          <input
-            className="input"
-            type="date"
-            value={newCodeDate}
-            onChange={e => setNewCodeDate(e.target.value)}
-            style={{ width: '10rem' }}
-          />
-          <input
-            className="input"
-            placeholder="コード"
-            value={newCodeValue}
-            onChange={e => setNewCodeValue(e.target.value)}
-            style={{ width: '8rem' }}
-          />
-          <button className="btn btn-primary" onClick={handleUpsertCode} style={{ background: '#d97706' }}>
-            <Save size={16} /> 設定
+        <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem', flexWrap: 'wrap', alignItems: 'center' }}>
+          <input className="input" type="date" value={newCodeDate}
+            onChange={e => setNewCodeDate(e.target.value)} style={{ width: '10rem' }} />
+          <input className="input" placeholder="コード" value={newCodeValue}
+            onChange={e => setNewCodeValue(e.target.value)} style={{ width: '8rem' }} />
+          <button className="btn btn-primary" onClick={handleUpsertCode} style={btnStyle}>
+            <Save size={16} /><span>設定</span>
           </button>
         </div>
 
-        {/* テーブル */}
         <div style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.875rem' }}>
             <thead>
@@ -226,6 +281,41 @@ export default function LocationManager() {
           {codes.length}件
         </p>
       </div>
+    </div>
+  );
+}
+
+// カラーピッカーコンポーネント
+function ColorPicker({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div style={{ position: 'relative' }}>
+      <button
+        onClick={() => setOpen(!open)}
+        style={{
+          width: '1.5rem', height: '1.5rem', borderRadius: '4px',
+          background: value, border: '2px solid #d1d5db', cursor: 'pointer', padding: 0,
+        }}
+      />
+      {open && (
+        <div style={{
+          position: 'absolute', top: '2rem', left: 0, zIndex: 50,
+          background: '#fff', border: '1px solid #e5e7eb', borderRadius: '0.5rem',
+          padding: '0.5rem', display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)',
+          gap: '0.25rem', boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+        }}>
+          {PRESET_COLORS.map(c => (
+            <button key={c}
+              onClick={() => { onChange(c); setOpen(false); }}
+              style={{
+                width: '1.5rem', height: '1.5rem', borderRadius: '4px',
+                background: c, border: value === c ? '2px solid #374151' : '1px solid #d1d5db',
+                cursor: 'pointer', padding: 0,
+              }}
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 }

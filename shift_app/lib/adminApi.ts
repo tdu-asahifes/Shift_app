@@ -98,17 +98,17 @@ export const adminApi = {
     return request('locations');
   },
 
-  async createLocation(locationId: string, locationName: string): Promise<void> {
+  async createLocation(locationId: string, locationName: string, color?: string): Promise<void> {
     await request('locations', {
       method: 'POST',
-      body: JSON.stringify({ locationId, locationName }),
+      body: JSON.stringify({ locationId, locationName, color }),
     });
   },
 
-  async updateLocation(id: string, locationName: string): Promise<void> {
+  async updateLocation(id: string, data: { locationName?: string; color?: string }): Promise<void> {
     await request(`locations/${encodeURIComponent(id)}`, {
       method: 'PUT',
-      body: JSON.stringify({ locationName }),
+      body: JSON.stringify(data),
     });
   },
 
@@ -126,6 +126,11 @@ export const adminApi = {
       method: 'POST',
       body: JSON.stringify({ date, code }),
     });
+  },
+
+  // QRコード
+  async getQrCodes(baseUrl: string): Promise<{ locationId: string; locationName: string; url: string; qrDataUrl: string }[]> {
+    return request(`qr-codes?baseUrl=${encodeURIComponent(baseUrl)}`);
   },
 
   // 迷子ログ

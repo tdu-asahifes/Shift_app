@@ -33,6 +33,7 @@ export interface AttendanceRecord {
 export interface Location {
   locationId: string;
   locationName: string;
+  color?: string;
 }
 
 // メンバー出勤状況

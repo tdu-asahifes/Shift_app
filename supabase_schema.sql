@@ -5,7 +5,8 @@
 -- 場所マスタ
 create table locations (
   location_id text primary key,
-  location_name text not null
+  location_name text not null,
+  color text default ''
 );
 
 -- シフトデータ（GASからスプシ同期）

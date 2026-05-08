@@ -362,8 +362,8 @@ export default function ShiftManager() {
                           }
                         }
 
-                        const bg = anySelected ? '#fef3c7'
-                          : cell ? '#e0f2fe' : '#fff';
+                        const locColor = cell ? (locations.find(l => l.locationId === cell.locationId)?.color || '#e0f2fe') : '#fff';
+                        const bg = anySelected ? '#fef3c7' : locColor;
 
                         return (
                           <td
