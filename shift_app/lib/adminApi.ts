@@ -9,6 +9,7 @@ export interface AdminShift {
   studentId: string;
   locationId: string;
   locationName: string;
+  department: string;
   notice: string;
 }
 

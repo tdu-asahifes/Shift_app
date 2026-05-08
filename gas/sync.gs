@@ -16,6 +16,7 @@
 // ---------- 設定 ----------
 
 // 日付シートの列インデックス（0始まり）
+var COL_DEPARTMENT = 2; // 所属（局）
 var COL_STUDENT_ID = 3; // 学籍番号
 var COL_NAME = 4;       // 氏名
 var TIME_COL_START = 9; // 時間列の開始位置（8:00〜）
@@ -204,6 +205,7 @@ function convertMatrixSheet(sheet, date, locationMap) {
 
   // 各行（人）を処理
   for (var r = 1; r < data.length; r++) {
+    var department = String(data[r][COL_DEPARTMENT] || '').trim();
     var studentId = String(data[r][COL_STUDENT_ID] || '').trim().toUpperCase();
     var name = String(data[r][COL_NAME] || '').trim();
     if (!studentId || !name) continue;
@@ -235,6 +237,7 @@ function convertMatrixSheet(sheet, date, locationMap) {
             name: name,
             student_id: studentId,
             location_id: locId,
+            department: department,
             notice: '',
           });
         }

@@ -29,6 +29,7 @@ export async function GET(request: Request) {
       studentId: r.student_id,
       locationId: r.location_id,
       locationName: r.locations?.location_name || r.location_id,
+      department: r.department || '',
       notice: r.notice || '',
     }))
   );
