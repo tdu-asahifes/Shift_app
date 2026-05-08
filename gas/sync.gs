@@ -96,10 +96,13 @@ function syncLocations() {
   var rows = [];
   for (var i = 1; i < data.length; i++) {
     if (!data[i][0]) continue;
-    rows.push({
+    var row = {
       location_id: String(data[i][0]).trim(),
       location_name: String(data[i][1]).trim(),
-    });
+      category: String(data[i][2] || '').trim(),
+      color: colorNameToHex(String(data[i][3] || '').trim()),
+    };
+    rows.push(row);
   }
   if (rows.length > 0) {
     supabaseRequest('locations', 'POST', rows);
@@ -354,6 +357,22 @@ function toLocationId(name) {
     .toLowerCase();
 }
 
+// 色名 → カラーコード変換
+var COLOR_MAP = {
+  '赤': '#ef4444', '青': '#3b82f6', '緑': '#22c55e', '黄': '#f59e0b',
+  '紫': '#8b5cf6', 'ピンク': '#ec4899', '水色': '#06b6d4', 'オレンジ': '#f97316',
+  '黄緑': '#84cc16', '紺': '#6366f1', 'グレー': '#64748b', '茶': '#92400e',
+  '赤': '#ef4444', 'red': '#ef4444', 'blue': '#3b82f6', 'green': '#22c55e',
+  'yellow': '#f59e0b', 'purple': '#8b5cf6', 'pink': '#ec4899', 'orange': '#f97316',
+};
+
+function colorNameToHex(name) {
+  if (!name) return '';
+  // すでにカラーコードならそのまま
+  if (name.charAt(0) === '#') return name;
+  return COLOR_MAP[name] || '';
+}
+
 function padId(n) {
   if (n < 10) return '00' + n;
   if (n < 100) return '0' + n;
@@ -420,12 +439,12 @@ function extractLocations() {
   var locSheet = ss.getSheetByName('場所一覧');
   if (!locSheet) locSheet = ss.insertSheet('場所一覧');
   locSheet.clear();
-  locSheet.appendRow(['場所ID', '場所名']);
+  locSheet.appendRow(['場所ID', '場所名', 'カテゴリ', '色']);
 
   var names = Object.keys(locationSet).sort();
   for (var i = 0; i < names.length; i++) {
     var id = 'loc' + padId(i + 1);
-    locSheet.appendRow([id, names[i]]);
+    locSheet.appendRow([id, names[i], '', '']);
   }
 
   SpreadsheetApp.getUi().alert(
