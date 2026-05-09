@@ -57,7 +57,7 @@ function supabaseRequest(path, method, body) {
 function onOpen() {
   SpreadsheetApp.getUi()
     .createMenu('シフト管理')
-    .addItem('場所一覧を自動抽出', 'extractLocations')
+    .addItem('場所・シフト一覧を自動抽出', 'extractLocationsAndShiftTypes')
     .addItem('Supabaseに同期', 'syncAll')
     .addItem('トリガー設定', 'setupTriggers')
     .addToUi();
@@ -418,14 +418,16 @@ function addMinutes(hour, minute, add) {
 // 例: "協賛迷路運営_5402" → { role: "協賛迷路運営", locationId: "5402のID" }
 // 「_」がなければ role=セル値, locationId=セル値から生成
 function parseShiftCell(cellValue, locationMap) {
-  var underscoreIdx = cellValue.indexOf('_');
+  // 全角＿を半角_に統一
+  var normalized = cellValue.replace(/＿/g, '_');
+  var underscoreIdx = normalized.indexOf('_');
   if (underscoreIdx === -1) {
     // _なし → シフト名=場所名として扱う
     var locId = locationMap[cellValue] || toLocationId(cellValue);
     return { role: cellValue, locationId: locId };
   }
-  var role = cellValue.substring(0, underscoreIdx).trim();
-  var location = cellValue.substring(underscoreIdx + 1).trim();
+  var role = normalized.substring(0, underscoreIdx).trim();
+  var location = normalized.substring(underscoreIdx + 1).trim();
   var locId = locationMap[location] || locationMap[cellValue] || toLocationId(location);
   return { role: role, locationId: locId };
 }
@@ -485,7 +487,7 @@ function isExcluded(value) {
   return false;
 }
 
-function extractLocations() {
+function extractLocationsAndShiftTypes() {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var settingSheet = ss.getSheetByName('設定');
   if (!settingSheet) {
@@ -499,8 +501,9 @@ function extractLocations() {
     if (settingData[i][0]) sheetNames.push(String(settingData[i][0]).trim());
   }
 
-  // 全シートからユニークな場所名を収集
-  var locationSet = {};
+  // 全シートからセル値を収集し、シフト名と場所名に分離
+  var locationSet = {};  // 場所名のユニーク集合
+  var shiftTypeSet = {}; // シフト名のユニーク集合
   for (var s = 0; s < sheetNames.length; s++) {
     var sheet = ss.getSheetByName(sheetNames[s]);
     if (!sheet) continue;
@@ -508,8 +511,20 @@ function extractLocations() {
     for (var r = 1; r < data.length; r++) {
       for (var c = TIME_COL_START; c < data[r].length; c++) {
         var val = String(data[r][c] || '').trim();
-        if (val && !isExcluded(val)) {
+        if (!val || isExcluded(val)) continue;
+
+        var normalized = val.replace(/＿/g, '_');
+        var idx = normalized.indexOf('_');
+        if (idx === -1) {
+          // _なし → 両方に追加
           locationSet[val] = true;
+          shiftTypeSet[val] = true;
+        } else {
+          // _あり → 前半=シフト名、後半=場所名
+          var role = normalized.substring(0, idx).trim();
+          var location = normalized.substring(idx + 1).trim();
+          if (role) shiftTypeSet[role] = true;
+          if (location) locationSet[location] = true;
         }
       }
     }
@@ -519,17 +534,30 @@ function extractLocations() {
   var locSheet = ss.getSheetByName('場所一覧');
   if (!locSheet) locSheet = ss.insertSheet('場所一覧');
   locSheet.clear();
-  locSheet.appendRow(['場所ID', '場所名', 'カテゴリ', '色']);
+  locSheet.appendRow(['場所ID', '場所名']);
 
-  var names = Object.keys(locationSet).sort();
-  for (var i = 0; i < names.length; i++) {
+  var locNames = Object.keys(locationSet).sort();
+  for (var i = 0; i < locNames.length; i++) {
     var id = 'loc' + padId(i + 1);
-    locSheet.appendRow([id, names[i], '', '']);
+    locSheet.appendRow([id, locNames[i]]);
+  }
+
+  // シフト一覧シートに書き出し
+  var stSheet = ss.getSheetByName('シフト一覧');
+  if (!stSheet) stSheet = ss.insertSheet('シフト一覧');
+  stSheet.clear();
+  stSheet.appendRow(['シフト名', '担当者', '最低人数', 'カテゴリ', '色']);
+
+  var stNames = Object.keys(shiftTypeSet).sort();
+  for (var i = 0; i < stNames.length; i++) {
+    stSheet.appendRow([stNames[i], '', '', '', '']);
   }
 
   SpreadsheetApp.getUi().alert(
-    '場所一覧を抽出しました: ' + names.length + '件\n\n' +
-    '「場所一覧」シートを確認し、不要な項目があれば行を削除してください。\n' +
-    '場所IDは自動生成されていますが、QRコードのURLに使うので必要に応じて編集してください。'
+    '抽出完了!\n\n' +
+    '・場所一覧: ' + locNames.length + '件\n' +
+    '・シフト一覧: ' + stNames.length + '件\n\n' +
+    '各シートを確認し、不要な項目は削除してください。\n' +
+    'シフト一覧の担当者・最低人数・カテゴリ・色は手動で設定してください。'
   );
 }
