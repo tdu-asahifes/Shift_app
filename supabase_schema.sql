@@ -5,9 +5,17 @@
 -- 場所マスタ
 create table locations (
   location_id text primary key,
-  location_name text not null,
-  color text default '',
-  category text default ''
+  location_name text not null
+);
+
+-- シフト種別マスタ（スプシ「シフト一覧」から同期）
+create table shift_types (
+  id bigint generated always as identity primary key,
+  name text not null,
+  person_in_charge text default '',
+  min_people int default 0,
+  category text default '',
+  color text default ''
 );
 
 -- シフトデータ（GASからスプシ同期）
@@ -70,6 +78,7 @@ create index idx_push_sub_student on push_subscriptions(student_id);
 -- anon キーでフロントから直接アクセスするため、必要な操作のみ許可
 
 alter table locations enable row level security;
+alter table shift_types enable row level security;
 alter table shifts enable row level security;
 alter table daily_codes enable row level security;
 alter table attendance enable row level security;
@@ -78,6 +87,7 @@ alter table push_subscriptions enable row level security;
 
 -- 読み取り: 全テーブル許可
 create policy "read locations" on locations for select using (true);
+create policy "read shift_types" on shift_types for select using (true);
 create policy "read shifts" on shifts for select using (true);
 create policy "read daily_codes" on daily_codes for select using (true);
 create policy "read attendance" on attendance for select using (true);

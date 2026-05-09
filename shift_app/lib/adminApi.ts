@@ -131,6 +131,11 @@ export const adminApi = {
     });
   },
 
+  // シフト種別
+  async getShiftTypes(): Promise<{ name: string; personInCharge: string; minPeople: number; category: string; color: string }[]> {
+    return request('shift-types');
+  },
+
   // 通知
   async sendNotification(title: string, body: string): Promise<{ sent: number; failed: number }> {
     return request('notifications', {

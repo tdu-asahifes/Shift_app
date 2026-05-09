@@ -23,6 +23,7 @@ const TIME_SLOTS = generateTimeSlots(8, 20);
 interface CellData {
   locationId: string;
   locationName: string;
+  role: string;
   shiftId: number;
 }
 
@@ -49,7 +50,7 @@ function buildMatrix(shifts: AdminShift[]): StaffRow[] {
 
     for (const slot of TIME_SLOTS) {
       if (slot >= s.startTime && slot < s.endTime) {
-        row.cells.set(slot, { locationId: s.locationId, locationName: s.locationName, shiftId: s.id });
+        row.cells.set(slot, { locationId: s.locationId, locationName: s.locationName, role: s.role || '', shiftId: s.id });
         if (slot < row.earliestSlot) row.earliestSlot = slot;
       }
     }
@@ -87,6 +88,7 @@ export default function ShiftManager() {
   const [date, setDate] = useState(today);
   const [shifts, setShifts] = useState<AdminShift[]>([]);
   const [locations, setLocations] = useState<Location[]>([]);
+  const [shiftTypeColors, setShiftTypeColors] = useState<Map<string, string>>(new Map());
   const [loading, setLoading] = useState(true);
   const [mode, setMode] = useState<Mode>('matrix');
 
@@ -104,12 +106,14 @@ export default function ShiftManager() {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const [s, l] = await Promise.all([
+      const [s, l, st] = await Promise.all([
         adminApi.getShifts(date),
         adminApi.getLocations(),
+        adminApi.getShiftTypes(),
       ]);
       setShifts(s);
       setLocations(l);
+      setShiftTypeColors(new Map(st.map(t => [t.name, t.color])));
     } catch (e) {
       alert(e instanceof Error ? e.message : 'データ取得に失敗');
     } finally {
@@ -365,7 +369,7 @@ export default function ShiftManager() {
                           }
                         }
 
-                        const rawColor = cell ? (locations.find(l => l.locationId === cell.locationId)?.color || '') : '';
+                        const rawColor = cell ? (shiftTypeColors.get(cell.role) || '') : '';
                         const locColor = cell ? (rawColor ? rawColor + '30' : '#e0f2fe') : '#fff';
                         const bg = anySelected ? '#fef3c7' : locColor;
 
@@ -391,7 +395,7 @@ export default function ShiftManager() {
                               textAlign: 'center',
                               borderRight: isStart && span > 1 ? '1px solid #93c5fd' : undefined,
                             }}
-                            title={cell ? `${cell.locationName} (${slot})` : slot}
+                            title={cell ? `${cell.role || cell.locationName} (${slot})` : slot}
                           >
                             {isStart && cell && (
                               <div style={{
@@ -403,7 +407,7 @@ export default function ShiftManager() {
                                 textOverflow: 'ellipsis',
                                 lineHeight: '1.2',
                               }}>
-                                {cell.locationName}
+                                {cell.role || cell.locationName}
                               </div>
                             )}
                           </td>

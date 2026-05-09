@@ -69,6 +69,7 @@ function syncAll() {
   // shiftsを先に削除（外部キー制約のため）
   supabaseRequest('shifts?id=gt.0', 'DELETE');
   syncLocations();
+  syncShiftTypes();
   syncDailyCodes();
   syncShiftsFromMatrix();
   SpreadsheetApp.getUi().alert('同期完了しました');
@@ -77,6 +78,7 @@ function syncAll() {
 function syncAllSilent() {
   supabaseRequest('shifts?id=gt.0', 'DELETE');
   syncLocations();
+  syncShiftTypes();
   syncDailyCodes();
   syncShiftsFromMatrix();
   Logger.log('自動同期完了: ' + new Date());
@@ -96,18 +98,46 @@ function syncLocations() {
   var rows = [];
   for (var i = 1; i < data.length; i++) {
     if (!data[i][0]) continue;
-    var row = {
+    rows.push({
       location_id: String(data[i][0]).trim(),
       location_name: String(data[i][1]).trim(),
-      category: String(data[i][2] || '').trim(),
-      color: colorNameToHex(String(data[i][3] || '').trim()),
-    };
-    rows.push(row);
+    });
   }
   if (rows.length > 0) {
     supabaseRequest('locations', 'POST', rows);
   }
   Logger.log('場所一覧: ' + rows.length + '件同期');
+}
+
+// ---------- シフト一覧の同期 ----------
+
+function syncShiftTypes() {
+  var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('シフト一覧');
+  if (!sheet) {
+    Logger.log('「シフト一覧」シートが見つかりません。スキップします。');
+    return;
+  }
+
+  var data = sheet.getDataRange().getValues();
+  if (data.length <= 1) return;
+
+  supabaseRequest('shift_types?id=gt.0', 'DELETE');
+
+  var rows = [];
+  for (var i = 1; i < data.length; i++) {
+    if (!data[i][0]) continue;
+    rows.push({
+      name: String(data[i][0]).trim(),
+      person_in_charge: String(data[i][1] || '').trim(),
+      min_people: parseInt(data[i][2]) || 0,
+      category: String(data[i][3] || '').trim(),
+      color: colorNameToHex(String(data[i][4] || '').trim()),
+    });
+  }
+  if (rows.length > 0) {
+    supabaseRequest('shift_types', 'POST', rows);
+  }
+  Logger.log('シフト一覧: ' + rows.length + '件同期');
 }
 
 // ---------- 当日コードの同期 ----------
