@@ -334,14 +334,14 @@ function setupTriggers() {
 
   ScriptApp.newTrigger('sendShiftReminders')
     .timeBased()
-    .everyMinutes(15)
+    .everyMinutes(5)
     .create();
 
   SpreadsheetApp.getUi().alert(
     'トリガーを設定しました\n' +
     '・毎朝 7:00 自動同期\n' +
     '・毎日 18:30 一括退勤\n' +
-    '・15分間隔 シフトリマインダー'
+    '・5分間隔 シフトリマインダー'
   );
 }
 
