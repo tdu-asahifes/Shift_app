@@ -140,20 +140,12 @@ export default function ShiftTab({ user }: Props) {
                     flexDirection: 'column',
                   }}
                 >
-                  {shift.role && (
-                    <span style={{
-                      fontSize: '0.6rem', fontWeight: 700,
-                      color: status === 'not_yet' ? '#374151' : '#fff',
-                      lineHeight: 1.2,
-                    }}>
-                      {shift.role}
-                    </span>
-                  )}
                   <span style={{
-                    fontSize: '0.6rem',
-                    color: status === 'not_yet' ? '#6b7280' : 'rgba(255,255,255,0.85)',
+                    fontSize: '0.65rem', fontWeight: 700,
+                    color: status === 'not_yet' ? '#374151' : '#fff',
+                    lineHeight: 1.2,
                   }}>
-                    {shift.locationName}
+                    {shift.role || shift.locationName}
                   </span>
                   <span style={{
                     fontSize: '0.55rem',
@@ -209,9 +201,10 @@ export default function ShiftTab({ user }: Props) {
             >
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                 <div>
-                  <p style={{ fontWeight: '700', fontSize: '1rem' }}>{shift.locationName}</p>
+                  <p style={{ fontWeight: '700', fontSize: '1rem' }}>{shift.role || shift.locationName}</p>
                   <p style={{ fontSize: '0.875rem', color: '#64748b', marginTop: '0.25rem' }}>
                     {shift.time}
+                    {shift.role && <span style={{ marginLeft: '0.5rem', fontSize: '0.8rem' }}>{shift.locationName}</span>}
                   </p>
                 </div>
                 <span style={{

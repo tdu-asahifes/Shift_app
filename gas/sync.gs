@@ -213,8 +213,8 @@ function convertMatrixSheet(sheet, date, locationMap) {
     var name = String(data[r][COL_NAME] || '').trim();
     if (!studentId || !name) continue;
 
-    // 連続する同じ場所をグループ化
-    var currentLoc = null;
+    // 連続する同じセル値をグループ化
+    var currentCell = null;
     var startTime = null;
     var endTime = null;
 
@@ -226,44 +226,46 @@ function convertMatrixSheet(sheet, date, locationMap) {
       // 除外値はスキップ（空セルと同じ扱い）
       var isValid = cellValue && !isExcluded(cellValue);
 
-      if (isValid && cellValue === currentLoc) {
-        // 同じ場所が続く → 終了時刻を延長
+      if (isValid && cellValue === currentCell) {
+        // 同じセル値が続く → 終了時刻を延長
         endTime = addMinutes(ts.hour, ts.minute, 30);
       } else {
         // 前のシフトを保存
-        if (currentLoc) {
-          var locId = locationMap[currentLoc] || toLocationId(currentLoc);
+        if (currentCell) {
+          var parsed = parseShiftCell(currentCell, locationMap);
           shifts.push({
             date: date,
             start_time: startTime + ':00',
             end_time: endTime + ':00',
             name: name,
             student_id: studentId,
-            location_id: locId,
+            location_id: parsed.locationId,
+            role: parsed.role,
             department: department,
             notice: '',
           });
         }
         // 新しいシフト開始
         if (isValid) {
-          currentLoc = cellValue;
+          currentCell = cellValue;
           startTime = timeStr;
           endTime = addMinutes(ts.hour, ts.minute, 30);
         } else {
-          currentLoc = null;
+          currentCell = null;
         }
       }
     }
     // 最後のシフトを保存
-    if (currentLoc) {
-      var locId = locationMap[currentLoc] || toLocationId(currentLoc);
+    if (currentCell) {
+      var parsed = parseShiftCell(currentCell, locationMap);
       shifts.push({
         date: date,
         start_time: startTime + ':00',
         end_time: endTime + ':00',
         name: name,
         student_id: studentId,
-        location_id: locId,
+        location_id: parsed.locationId,
+        role: parsed.role,
         department: department,
         notice: '',
       });
@@ -380,6 +382,22 @@ function addMinutes(hour, minute, add) {
     minute = minute % 60;
   }
   return padTime(hour) + ':' + padTime(minute);
+}
+
+// セル値「シフト名_場所」を分離
+// 例: "協賛迷路運営_5402" → { role: "協賛迷路運営", locationId: "5402のID" }
+// 「_」がなければ role=セル値, locationId=セル値から生成
+function parseShiftCell(cellValue, locationMap) {
+  var underscoreIdx = cellValue.indexOf('_');
+  if (underscoreIdx === -1) {
+    // _なし → シフト名=場所名として扱う
+    var locId = locationMap[cellValue] || toLocationId(cellValue);
+    return { role: cellValue, locationId: locId };
+  }
+  var role = cellValue.substring(0, underscoreIdx).trim();
+  var location = cellValue.substring(underscoreIdx + 1).trim();
+  var locId = locationMap[location] || locationMap[cellValue] || toLocationId(location);
+  return { role: role, locationId: locId };
 }
 
 function toLocationId(name) {
