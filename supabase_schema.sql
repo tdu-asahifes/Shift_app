@@ -49,11 +49,22 @@ create table lost_logs (
   date date not null default current_date
 );
 
+-- プッシュ通知サブスクリプション
+create table push_subscriptions (
+  id bigint generated always as identity primary key,
+  student_id text not null,
+  endpoint text not null unique,
+  keys_p256dh text not null,
+  keys_auth text not null,
+  created_at timestamptz not null default now()
+);
+
 -- インデックス
 create index idx_shifts_student_date on shifts(student_id, date);
 create index idx_shifts_location_date on shifts(location_id, date);
 create index idx_attendance_student_date on attendance(student_id, date);
 create index idx_attendance_location_date on attendance(location_id, date);
+create index idx_push_sub_student on push_subscriptions(student_id);
 
 -- RLS（Row Level Security）ポリシー
 -- anon キーでフロントから直接アクセスするため、必要な操作のみ許可
@@ -63,6 +74,7 @@ alter table shifts enable row level security;
 alter table daily_codes enable row level security;
 alter table attendance enable row level security;
 alter table lost_logs enable row level security;
+alter table push_subscriptions enable row level security;
 
 -- 読み取り: 全テーブル許可
 create policy "read locations" on locations for select using (true);

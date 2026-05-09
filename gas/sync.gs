@@ -286,6 +286,31 @@ function batchCheckOut() {
   Logger.log('一括退勤完了: ' + today);
 }
 
+// ---------- シフトリマインダー ----------
+
+function sendShiftReminders() {
+  var props = PropertiesService.getScriptProperties();
+  var appUrl = props.getProperty('APP_URL'); // デプロイURL
+  var cronSecret = props.getProperty('CRON_SECRET');
+  if (!appUrl) {
+    Logger.log('APP_URLが設定されていません');
+    return;
+  }
+
+  var url = appUrl + '/api/cron/shift-reminders';
+  var options = {
+    method: 'GET',
+    headers: {},
+    muteHttpExceptions: true,
+  };
+  if (cronSecret) {
+    options.headers['Authorization'] = 'Bearer ' + cronSecret;
+  }
+
+  var res = UrlFetchApp.fetch(url, options);
+  Logger.log('シフトリマインダー: ' + res.getContentText());
+}
+
 // ---------- トリガー設定 ----------
 
 function setupTriggers() {
@@ -307,10 +332,16 @@ function setupTriggers() {
     .nearMinute(30)
     .create();
 
+  ScriptApp.newTrigger('sendShiftReminders')
+    .timeBased()
+    .everyMinutes(15)
+    .create();
+
   SpreadsheetApp.getUi().alert(
     'トリガーを設定しました\n' +
     '・毎朝 7:00 自動同期\n' +
-    '・毎日 18:30 一括退勤'
+    '・毎日 18:30 一括退勤\n' +
+    '・15分間隔 シフトリマインダー'
   );
 }
 

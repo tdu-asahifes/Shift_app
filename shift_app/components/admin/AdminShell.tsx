@@ -2,18 +2,20 @@
 import { useState } from 'react';
 import { adminApi } from '@/lib/adminApi';
 import { clearAdminSession } from '@/lib/adminSession';
-import { CalendarDays, Users, MapPin, AlertTriangle, LogOut } from 'lucide-react';
+import { CalendarDays, Users, MapPin, AlertTriangle, Bell, LogOut } from 'lucide-react';
 import ShiftManager from './ShiftManager';
 import AttendanceDashboard from './AttendanceDashboard';
 import LocationManager from './LocationManager';
 import LostLogViewer from './LostLogViewer';
+import NotificationSender from './NotificationSender';
 
-type Tab = 'shifts' | 'attendance' | 'locations' | 'lost-logs';
+type Tab = 'shifts' | 'attendance' | 'locations' | 'notifications' | 'lost-logs';
 
 const tabs: { key: Tab; label: string; icon: React.ReactNode }[] = [
   { key: 'shifts', label: 'シフト管理', icon: <CalendarDays size={18} /> },
   { key: 'attendance', label: '出勤状況', icon: <Users size={18} /> },
   { key: 'locations', label: '場所・コード', icon: <MapPin size={18} /> },
+  { key: 'notifications', label: '通知', icon: <Bell size={18} /> },
   { key: 'lost-logs', label: '迷子ログ', icon: <AlertTriangle size={18} /> },
 ];
 
@@ -105,6 +107,7 @@ export default function AdminShell({ onLogout }: Props) {
         {activeTab === 'shifts' && <ShiftManager />}
         {activeTab === 'attendance' && <AttendanceDashboard />}
         {activeTab === 'locations' && <LocationManager />}
+        {activeTab === 'notifications' && <NotificationSender />}
         {activeTab === 'lost-logs' && <LostLogViewer />}
       </main>
     </div>

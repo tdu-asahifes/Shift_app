@@ -1,5 +1,5 @@
 'use client';
-import { useState, type ReactNode } from 'react';
+import { useState, useEffect, type ReactNode } from 'react';
 import dynamic from 'next/dynamic';
 import { LoginUser } from '@/lib/types';
 import { clearSession, saveLocation } from '@/lib/session';
@@ -7,6 +7,7 @@ import { ScanLine, CalendarDays, History, LogOut } from 'lucide-react';
 import CheckInTab from './CheckInTab';
 import ShiftTab from './ShiftTab';
 import HistoryTab from './HistoryTab';
+import NotificationBanner from './NotificationBanner';
 
 const QrScanner = dynamic(() => import('./QrScanner'), { ssr: false });
 
@@ -28,6 +29,12 @@ export default function Dashboard({ user, locationId: initialLocation, onLogout 
   const [tab, setTab] = useState<Tab>(initialLocation ? 'checkin' : 'shift');
   const [locationId, setLocationId] = useState(initialLocation);
   const [scanning, setScanning] = useState(false);
+
+  useEffect(() => {
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js').catch(() => {});
+    }
+  }, []);
 
   function handleLogout() {
     clearSession();
@@ -67,6 +74,9 @@ export default function Dashboard({ user, locationId: initialLocation, onLogout 
           ログアウト
         </button>
       </header>
+
+      {/* 通知バナー */}
+      <NotificationBanner studentId={user.studentId} />
 
       {/* コンテンツ */}
       <main style={{ flex: 1, overflowY: 'auto', paddingBottom: '4rem' }}>

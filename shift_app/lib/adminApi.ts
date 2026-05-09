@@ -131,6 +131,14 @@ export const adminApi = {
     });
   },
 
+  // 通知
+  async sendNotification(title: string, body: string): Promise<{ sent: number; failed: number }> {
+    return request('notifications', {
+      method: 'POST',
+      body: JSON.stringify({ title, body }),
+    });
+  },
+
   // QRコード
   async getQrCodes(baseUrl: string): Promise<{ locationId: string; locationName: string; url: string; qrDataUrl: string }[]> {
     return request(`qr-codes?baseUrl=${encodeURIComponent(baseUrl)}`);
