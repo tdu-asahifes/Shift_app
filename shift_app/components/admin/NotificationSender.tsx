@@ -88,7 +88,7 @@ export default function NotificationSender() {
       <div className="card" style={{ padding: '1.25rem' }}>
         <h2 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: '0.5rem' }}>シフトリマインダー</h2>
         <p style={{ fontSize: '0.8rem', color: '#6b7280' }}>
-          シフト開始15分前に自動で通知が送信されます。
+          シフト開始5分前に次のシフトを通知し、開始5分後に未打刻の場合は打刻を促す通知が自動送信されます。
           スタッフがアプリで通知を有効にしている場合のみ届きます。
         </p>
       </div>
