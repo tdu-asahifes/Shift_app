@@ -264,6 +264,7 @@ function convertMatrixSheet(sheet, date, locationMap) {
         name: name,
         student_id: studentId,
         location_id: locId,
+        department: department,
         notice: '',
       });
     }
